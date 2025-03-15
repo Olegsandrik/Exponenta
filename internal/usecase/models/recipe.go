@@ -6,6 +6,7 @@ import (
 )
 
 type RecipeModel struct {
+	Id          int
 	Name        string
 	Desc        string
 	Img         string
@@ -40,6 +41,7 @@ func ConvertDtoToModel(rt []dto.RecipeDto) []RecipeModel {
 	RecipeItems := make([]RecipeModel, 0, len(rt))
 	for _, r := range rt {
 		RecipeItems = append(RecipeItems, RecipeModel{
+			Id:          r.Id,
 			Name:        r.Name,
 			Desc:        r.Desc,
 			Img:         r.Img,
@@ -56,6 +58,7 @@ func ConvertModelToDto(rm []RecipeModel) []dto.RecipeDto {
 	RecipeItems := make([]dto.RecipeDto, 0, len(rm))
 	for _, r := range rm {
 		RecipeItems = append(RecipeItems, dto.RecipeDto{
+			Id:          r.Id,
 			Img:         r.Img,
 			Desc:        r.Desc,
 			Name:        r.Name,

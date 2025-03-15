@@ -5,6 +5,7 @@ import (
 )
 
 type RecipeTable struct {
+	Id   int    `db:"id"`
 	Name string `db:"name"`
 	Desc string `db:"description"`
 	Img  string `db:"image"`
@@ -19,6 +20,7 @@ func ConvertDaoToModel(rt []RecipeTable) []models.RecipeModel {
 	RecipeItems := make([]models.RecipeModel, 0, len(rt))
 	for _, r := range rt {
 		RecipeItems = append(RecipeItems, models.RecipeModel{
+			Id:          r.Id,
 			Name:        r.Name,
 			Desc:        r.Desc,
 			Img:         r.Img,
@@ -47,6 +49,7 @@ func ConvertModelToDao(rm []models.RecipeModel) []RecipeTable {
 	RecipeItems := make([]RecipeTable, 0, len(rm))
 	for _, r := range rm {
 		RecipeItems = append(RecipeItems, RecipeTable{
+			Id:   r.Id,
 			Name: r.Name,
 			Desc: r.Desc,
 			Img:  r.Img,

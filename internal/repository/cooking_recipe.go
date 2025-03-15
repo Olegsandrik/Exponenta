@@ -19,7 +19,7 @@ func NewCookingRecipeRepo(storage *DB.Adapter) *CookingRecipeRepo {
 }
 
 func (repo *CookingRecipeRepo) GetAllRecipe(ctx context.Context, num int) []models.RecipeModel {
-	q := `SELECT name, description, image FROM public.recipes LIMIT $1`
+	q := `SELECT id, name, description, image FROM public.recipes LIMIT $1`
 	var recipeRows []dao.RecipeTable
 	err := repo.storage.Select(ctx, &recipeRows, q, num)
 	if err != nil {

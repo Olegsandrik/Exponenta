@@ -3,6 +3,7 @@ package dto
 import "encoding/json"
 
 type RecipeDto struct {
+	Id          int             `json:"id"`
 	Name        string          `json:"name,omitempty"`
 	Desc        string          `json:"description,omitempty"`
 	Img         string          `json:"img,omitempty"`
