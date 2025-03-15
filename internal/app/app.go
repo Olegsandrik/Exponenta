@@ -47,6 +47,7 @@ func InitApp() *App {
 	// Router
 
 	r := mux.NewRouter()
+	r.Use(middleware.CorsMiddleware)
 	r.Use(middleware.LoggingMiddleware)
 
 	apiRouter := r.PathPrefix("/api").Subrouter()

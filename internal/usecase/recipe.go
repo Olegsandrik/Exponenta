@@ -50,6 +50,12 @@ func (u *CookingRecipeUsecase) GetRecipeByID(ctx context.Context, idStr string) 
 		return nil, err
 	}
 	recipeModels := u.repo.GetRecipeByID(ctx, id)
+
+	re := regexp.MustCompile(`<[^>]*>`)
+	for i := range recipeModels {
+		recipeModels[i].Desc = re.ReplaceAllString(recipeModels[i].Desc, "")
+	}
+	
 	recipeDto := models.ConvertModelToDto(recipeModels)
 	return recipeDto, nil
 }
