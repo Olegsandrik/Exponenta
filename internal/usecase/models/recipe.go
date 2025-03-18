@@ -16,25 +16,46 @@ type RecipeModel struct {
 	Steps       string
 }
 
-type Step struct {
-	Number      int          `json:"number"`
-	Step        string       `json:"step"`
-	Ingredients []Ingredient `json:"ingredients"`
-	Equipment   []Equipment  `json:"equipment"`
+type CurrentRecipe struct {
+	Id          int
+	Name        string
+	CurrentStep CurrentStepRecipe
 }
 
-type Ingredient struct {
-	ID            int    `json:"id"`
-	Name          string `json:"name"`
-	LocalizedName string `json:"localizedName"`
-	Image         string `json:"image"`
+type CurrentStepRecipe struct {
+	NumStep     int
+	Step        string
+	Ingredients json.RawMessage
+	Equipment   json.RawMessage
+	Length      json.RawMessage
 }
 
-type Equipment struct {
-	ID            int    `json:"id"`
-	Name          string `json:"name"`
-	LocalizedName string `json:"localizedName"`
-	Image         string `json:"image"`
+func ConvertCurrentRecipeToDTO(recipe CurrentRecipe) dto.CurrentRecipeDto {
+	return dto.CurrentRecipeDto{
+		Id:   recipe.Id,
+		Name: recipe.Name,
+		CurrentStep: dto.CurrentStepRecipeDto{
+			NumStep:     recipe.CurrentStep.NumStep,
+			Step:        recipe.CurrentStep.Step,
+			Ingredients: recipe.CurrentStep.Ingredients,
+			Equipment:   recipe.CurrentStep.Equipment,
+			Length:      recipe.CurrentStep.Length,
+		},
+	}
+}
+
+func ConvertDTOToCurrentRecipe(recipe dto.CurrentRecipeDto) CurrentRecipe {
+	return CurrentRecipe{
+		Id:   recipe.Id,
+		Name: recipe.Name,
+		CurrentStep: CurrentStepRecipe{
+			NumStep:     recipe.CurrentStep.NumStep,
+			Step:        recipe.CurrentStep.Step,
+			Ingredients: recipe.CurrentStep.Ingredients,
+			Equipment:   recipe.CurrentStep.Equipment,
+			Length:      recipe.CurrentStep.Length,
+		},
+	}
 }
 
 func ConvertDtoToModel(rt []dto.RecipeDto) []RecipeModel {
@@ -47,7 +68,6 @@ func ConvertDtoToModel(rt []dto.RecipeDto) []RecipeModel {
 			Img:         r.Img,
 			CookingTime: r.CookingTime,
 			ServingsNum: r.ServingsNum,
-			Ingredients: r.Ingredients,
 			Steps:       string(r.Steps),
 		})
 	}
@@ -64,17 +84,8 @@ func ConvertModelToDto(rm []RecipeModel) []dto.RecipeDto {
 			Name:        r.Name,
 			CookingTime: r.CookingTime,
 			ServingsNum: r.ServingsNum,
-			Ingredients: r.Ingredients,
 			Steps:       json.RawMessage(r.Steps),
 		})
 	}
 	return RecipeItems
-}
-
-func ConvertOneModelToOneDto(rm RecipeModel) dto.RecipeDto {
-	return dto.RecipeDto{
-		Img:  rm.Img,
-		Name: rm.Name,
-		Desc: rm.Desc,
-	}
 }

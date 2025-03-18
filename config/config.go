@@ -22,7 +22,6 @@ var (
 
 	// Server
 
-	SERVER_PORT    = getEnvStr("SERVER_PORT", "")
 	SERVER_TIMEOUT = getEnvTime("SERVER_TIMEOUT", 5*time.Second)
 )
 
