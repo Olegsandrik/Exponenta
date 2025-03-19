@@ -16,13 +16,13 @@ type RecipeModel struct {
 	Steps       string
 }
 
-type CurrentRecipe struct {
+type CurrentRecipeModel struct {
 	Id          int
 	Name        string
-	CurrentStep CurrentStepRecipe
+	CurrentStep CurrentStepRecipeModel
 }
 
-type CurrentStepRecipe struct {
+type CurrentStepRecipeModel struct {
 	NumStep     int
 	Step        string
 	Ingredients json.RawMessage
@@ -30,35 +30,43 @@ type CurrentStepRecipe struct {
 	Length      json.RawMessage
 }
 
-func ConvertCurrentRecipeToDTO(recipe CurrentRecipe) dto.CurrentRecipeDto {
+func ConvertCurrentRecipeToDTO(recipe CurrentRecipeModel) dto.CurrentRecipeDto {
 	return dto.CurrentRecipeDto{
-		Id:   recipe.Id,
-		Name: recipe.Name,
-		CurrentStep: dto.CurrentStepRecipeDto{
-			NumStep:     recipe.CurrentStep.NumStep,
-			Step:        recipe.CurrentStep.Step,
-			Ingredients: recipe.CurrentStep.Ingredients,
-			Equipment:   recipe.CurrentStep.Equipment,
-			Length:      recipe.CurrentStep.Length,
-		},
+		Id:          recipe.Id,
+		Name:        recipe.Name,
+		CurrentStep: ConvertCurrentStepToDTO(recipe.CurrentStep),
 	}
 }
 
-func ConvertDTOToCurrentRecipe(recipe dto.CurrentRecipeDto) CurrentRecipe {
-	return CurrentRecipe{
-		Id:   recipe.Id,
-		Name: recipe.Name,
-		CurrentStep: CurrentStepRecipe{
-			NumStep:     recipe.CurrentStep.NumStep,
-			Step:        recipe.CurrentStep.Step,
-			Ingredients: recipe.CurrentStep.Ingredients,
-			Equipment:   recipe.CurrentStep.Equipment,
-			Length:      recipe.CurrentStep.Length,
-		},
+func ConvertCurrentStepToDTO(step CurrentStepRecipeModel) dto.CurrentStepRecipeDto {
+	return dto.CurrentStepRecipeDto{
+		NumStep:     step.NumStep,
+		Step:        step.Step,
+		Ingredients: step.Ingredients,
+		Equipment:   step.Equipment,
+		Length:      step.Length,
 	}
 }
 
-func ConvertDtoToModel(rt []dto.RecipeDto) []RecipeModel {
+func ConvertDTOToCurrentRecipe(recipe dto.CurrentRecipeDto) CurrentRecipeModel {
+	return CurrentRecipeModel{
+		Id:          recipe.Id,
+		Name:        recipe.Name,
+		CurrentStep: ConvertDtoToCurrentStep(recipe.CurrentStep),
+	}
+}
+
+func ConvertDtoToCurrentStep(step dto.CurrentStepRecipeDto) CurrentStepRecipeModel {
+	return CurrentStepRecipeModel{
+		NumStep:     step.NumStep,
+		Step:        step.Step,
+		Ingredients: step.Ingredients,
+		Equipment:   step.Equipment,
+		Length:      step.Length,
+	}
+}
+
+func ConvertDtoToRecipe(rt []dto.RecipeDto) []RecipeModel {
 	RecipeItems := make([]RecipeModel, 0, len(rt))
 	for _, r := range rt {
 		RecipeItems = append(RecipeItems, RecipeModel{
@@ -74,7 +82,7 @@ func ConvertDtoToModel(rt []dto.RecipeDto) []RecipeModel {
 	return RecipeItems
 }
 
-func ConvertModelToDto(rm []RecipeModel) []dto.RecipeDto {
+func ConvertRecipeToDto(rm []RecipeModel) []dto.RecipeDto {
 	RecipeItems := make([]dto.RecipeDto, 0, len(rm))
 	for _, r := range rm {
 		RecipeItems = append(RecipeItems, dto.RecipeDto{

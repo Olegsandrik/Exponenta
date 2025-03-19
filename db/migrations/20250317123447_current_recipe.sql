@@ -5,9 +5,10 @@ ALTER TABLE recipes
 
 CREATE TABLE IF NOT EXISTS current_recipe (
      user_id INT UNIQUE,
-     recipe_id INT UNIQUE ,
-     current_step_num INT DEFAULT 1,
-     PRIMARY KEY (user_id, recipe_id)
+     recipe_id INT,
+     name TEXT,
+     current_step_num INT DEFAULT 1 CHECK (current_step_num >=1),
+     PRIMARY KEY (user_id)
 );
 
 CREATE TABLE timers (
@@ -18,7 +19,7 @@ CREATE TABLE timers (
     description TEXT,
     start_time TIMESTAMP NOT NULL DEFAULT NOW(),
     end_time TIMESTAMP,
-    FOREIGN KEY (user_id, recipe_id) REFERENCES current_recipe(user_id, recipe_id) ON DELETE CASCADE
+    FOREIGN KEY (user_id) REFERENCES current_recipe(user_id) ON DELETE CASCADE
 );
 
 CREATE TABLE current_recipe_step (
@@ -28,8 +29,8 @@ CREATE TABLE current_recipe_step (
     step TEXT,
     ingredients JSON,
     equipment JSON,
-    length JSON,
-    FOREIGN KEY (user_id, recipe_id) REFERENCES current_recipe(user_id, recipe_id) ON DELETE CASCADE
+    length JSON DEFAULT 'null',
+    FOREIGN KEY (user_id) REFERENCES current_recipe(user_id) ON DELETE CASCADE
 );
 
 -- +goose StatementEnd

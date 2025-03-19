@@ -11,7 +11,7 @@ import (
 
 type CookingRecipeUsecase interface {
 	GetAllRecipe(context.Context, int) ([]dto.RecipeDto, error)
-	GetRecipeByID(context.Context, int) ([]dto.RecipeDto, error)
+	GetRecipeByID(context.Context, int) (dto.RecipeDto, error)
 	StartCookingRecipe(context.Context, int) error
 	EndCookingRecipe(context.Context) error
 	GetCurrentRecipe(context.Context) (dto.CurrentRecipeDto, error)
@@ -54,6 +54,7 @@ func (h *CookingRecipeHandler) GetAllRecipes(w http.ResponseWriter, r *http.Requ
 		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 			Status: http.StatusBadRequest,
 			Msg:    "id not found",
+			MsgRus: "id не найден",
 		})
 		return
 	}
@@ -62,7 +63,8 @@ func (h *CookingRecipeHandler) GetAllRecipes(w http.ResponseWriter, r *http.Requ
 	if err != nil {
 		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 			Status: http.StatusBadRequest,
-			Msg:    "num must be int",
+			Msg:    err.Error(),
+			MsgRus: "номер должен быть целым числом",
 		})
 		return
 	}
@@ -71,7 +73,8 @@ func (h *CookingRecipeHandler) GetAllRecipes(w http.ResponseWriter, r *http.Requ
 	if err != nil {
 		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 			Status: http.StatusInternalServerError,
-			Msg:    "Failed to get recipes",
+			Msg:    err.Error(),
+			MsgRus: "не получилось получить рецепты",
 		})
 		return
 	}
@@ -90,6 +93,7 @@ func (h *CookingRecipeHandler) GetRecipeByID(w http.ResponseWriter, r *http.Requ
 		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 			Status: http.StatusBadRequest,
 			Msg:    "id not found",
+			MsgRus: "id не найден",
 		})
 		return
 	}
@@ -98,23 +102,25 @@ func (h *CookingRecipeHandler) GetRecipeByID(w http.ResponseWriter, r *http.Requ
 	if err != nil {
 		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 			Status: http.StatusBadRequest,
-			Msg:    "id must be int",
+			Msg:    err.Error(),
+			MsgRus: "id должен быть целым числом",
 		})
 		return
 	}
 
 	recipe, err := h.usecase.GetRecipeByID(ctx, recipeId)
-	if err != nil || len(recipe) == 0 {
+	if err != nil {
 		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 			Status: http.StatusInternalServerError,
-			Msg:    "Failed to get recipe",
+			Msg:    err.Error(),
+			MsgRus: "не получилось получить рецепт",
 		})
 		return
 	}
 
 	utils.JSONResponse(ctx, w, 200, utils.SuccessResponse{
 		Status: http.StatusOK,
-		Data:   recipe[0],
+		Data:   recipe,
 	})
 }
 
@@ -125,7 +131,8 @@ func (h *CookingRecipeHandler) GetCurrentRecipe(w http.ResponseWriter, r *http.R
 	if err != nil {
 		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 			Status: http.StatusInternalServerError,
-			Msg:    "Failed to get recipe",
+			Msg:    err.Error(),
+			MsgRus: "не получилось получить рецепт",
 		})
 		return
 	}
@@ -142,6 +149,7 @@ func (h *CookingRecipeHandler) StartCookingRecipe(w http.ResponseWriter, r *http
 		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 			Status: http.StatusBadRequest,
 			Msg:    "id not found",
+			MsgRus: "id не найден",
 		})
 		return
 	}
@@ -150,7 +158,8 @@ func (h *CookingRecipeHandler) StartCookingRecipe(w http.ResponseWriter, r *http
 	if err != nil {
 		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 			Status: http.StatusBadRequest,
-			Msg:    "id must be int",
+			Msg:    err.Error(),
+			MsgRus: "id должен быть целым числом",
 		})
 		return
 	}
@@ -160,8 +169,10 @@ func (h *CookingRecipeHandler) StartCookingRecipe(w http.ResponseWriter, r *http
 	if err != nil {
 		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 			Status: http.StatusInternalServerError,
-			Msg:    "failed to start recipe",
+			Msg:    err.Error(),
+			MsgRus: "не получилось начать готовку",
 		})
+		return
 	}
 
 	utils.JSONResponse(ctx, w, 200, utils.SuccessResponse{
@@ -177,8 +188,10 @@ func (h *CookingRecipeHandler) EndCookingRecipe(w http.ResponseWriter, r *http.R
 	if err != nil {
 		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 			Status: http.StatusInternalServerError,
-			Msg:    "failed to end recipe",
+			Msg:    err.Error(),
+			MsgRus: "не получилось завершить рецепт",
 		})
+		return
 	}
 
 	utils.JSONResponse(ctx, w, 200, utils.SuccessResponse{
@@ -194,7 +207,8 @@ func (h *CookingRecipeHandler) NextStepCookingRecipe(w http.ResponseWriter, r *h
 	if err != nil {
 		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 			Status: http.StatusInternalServerError,
-			Msg:    "Failed next step recipe",
+			Msg:    err.Error(),
+			MsgRus: "не получилось перейти к следующему шагу рецепта",
 		})
 		return
 	}
@@ -212,8 +226,10 @@ func (h *CookingRecipeHandler) PrevStepCookingRecipe(w http.ResponseWriter, r *h
 	if err != nil {
 		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 			Status: http.StatusInternalServerError,
-			Msg:    "Failed previous step recipe",
+			Msg:    err.Error(),
+			MsgRus: "не получилось перейти к предыдущему шагу рецетпа",
 		})
+		return
 	}
 
 	utils.JSONResponse(ctx, w, 200, utils.SuccessResponse{

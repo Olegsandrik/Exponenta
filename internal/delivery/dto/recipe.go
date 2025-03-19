@@ -24,5 +24,5 @@ type CurrentStepRecipeDto struct {
 	Step        string          `json:"description,omitempty"`
 	Ingredients json.RawMessage `json:"ingredients,omitempty"`
 	Equipment   json.RawMessage `json:"equipment,omitempty"`
-	Length      json.RawMessage `json:"length,omitempty"`
+	Length      json.RawMessage `json:"time,omitempty"`
 }
