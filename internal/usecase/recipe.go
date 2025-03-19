@@ -15,6 +15,7 @@ type CookingRecipeRepo interface {
 	GetCurrentRecipe(ctx context.Context, uId uint) (models.CurrentRecipeModel, error)
 	GetNextRecipeStep(ctx context.Context, uId uint) (models.CurrentStepRecipeModel, error)
 	GetPrevRecipeStep(ctx context.Context, uId uint) (models.CurrentStepRecipeModel, error)
+	GetCurrentStep(ctx context.Context, uId uint) (models.CurrentStepRecipeModel, error)
 }
 
 type CookingRecipeUsecase struct {
@@ -55,15 +56,22 @@ func (u *CookingRecipeUsecase) GetRecipeByID(ctx context.Context, id int) (dto.R
 	return recipeDto[0], nil
 }
 
-func (u *CookingRecipeUsecase) StartCookingRecipe(ctx context.Context, recipeId int) error {
+func (u *CookingRecipeUsecase) StartCookingRecipe(ctx context.Context, recipeId int) (dto.CurrentStepRecipeDto, error) {
 	uId := uint(1)
 
 	err := u.repo.StartCooking(ctx, uId, recipeId)
 	if err != nil {
-		return err
+		return dto.CurrentStepRecipeDto{}, err
 	}
 
-	return nil
+	currentRecipeStepModel, err := u.repo.GetCurrentStep(ctx, uId)
+	if err != nil {
+		return dto.CurrentStepRecipeDto{}, err
+	}
+
+	currentRecipeStep := models.ConvertCurrentStepToDTO(currentRecipeStepModel)
+
+	return currentRecipeStep, nil
 }
 
 func (u *CookingRecipeUsecase) EndCookingRecipe(ctx context.Context) error {

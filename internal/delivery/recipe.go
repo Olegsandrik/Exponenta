@@ -12,7 +12,7 @@ import (
 type CookingRecipeUsecase interface {
 	GetAllRecipe(context.Context, int) ([]dto.RecipeDto, error)
 	GetRecipeByID(context.Context, int) (dto.RecipeDto, error)
-	StartCookingRecipe(context.Context, int) error
+	StartCookingRecipe(context.Context, int) (dto.CurrentStepRecipeDto, error)
 	EndCookingRecipe(context.Context) error
 	GetCurrentRecipe(context.Context) (dto.CurrentRecipeDto, error)
 	NextStepRecipe(context.Context) (dto.CurrentStepRecipeDto, error)
@@ -164,7 +164,7 @@ func (h *CookingRecipeHandler) StartCookingRecipe(w http.ResponseWriter, r *http
 		return
 	}
 
-	err = h.usecase.StartCookingRecipe(ctx, id)
+	currentRecipe, err := h.usecase.StartCookingRecipe(ctx, id)
 
 	if err != nil {
 		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
@@ -177,7 +177,7 @@ func (h *CookingRecipeHandler) StartCookingRecipe(w http.ResponseWriter, r *http
 
 	utils.JSONResponse(ctx, w, 200, utils.SuccessResponse{
 		Status: http.StatusOK,
-		Data:   nil,
+		Data:   currentRecipe,
 	})
 }
 
