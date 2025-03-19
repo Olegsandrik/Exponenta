@@ -3,6 +3,14 @@ package app
 import (
 	"context"
 	"errors"
+	"io"
+	"log/slog"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
 	"github.com/Olegsandrik/Exponenta/config"
 	"github.com/Olegsandrik/Exponenta/internal/adapters/postgres"
 	"github.com/Olegsandrik/Exponenta/internal/delivery"
@@ -10,12 +18,10 @@ import (
 	"github.com/Olegsandrik/Exponenta/internal/repository"
 	"github.com/Olegsandrik/Exponenta/internal/usecase"
 	"github.com/gorilla/mux"
-	"io"
-	"log/slog"
-	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
+)
+
+const (
+	_timeout = 5 * time.Second
 )
 
 type App struct {
@@ -33,16 +39,17 @@ func (app *App) StopServer(ctx context.Context) error {
 	return app.server.Shutdown(ctx)
 }
 
-func InitServer(router *mux.Router) *http.Server {
+func InitServer(router *mux.Router, config *config.Config) *http.Server {
 	return &http.Server{
-		Addr:         ":8080",
+		Addr:         config.Port,
 		Handler:      router,
-		WriteTimeout: config.SERVER_TIMEOUT,
-		ReadTimeout:  config.SERVER_TIMEOUT,
+		WriteTimeout: config.ServerTimeout,
+		ReadTimeout:  config.ServerTimeout,
 	}
 }
 
 func InitApp() *App {
+	cfg := config.NewConfig()
 
 	// Router
 
@@ -59,12 +66,12 @@ func InitApp() *App {
 
 	// Postgres
 
-	postgresAdapter, err := postgres.NewPostgresAdapter()
+	postgresAdapter, err := postgres.NewPostgresAdapter(cfg)
 	if err != nil {
 		panic(err)
 	}
 
-	server := InitServer(r)
+	server := InitServer(r, cfg)
 
 	// Cooking recipe
 
@@ -95,7 +102,7 @@ func (app *App) Start() {
 
 	<-exit
 
-	ctx, cancel := context.WithTimeout(context.Background(), config.SERVER_TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), _timeout)
 	defer cancel()
 
 	app.logger.Info("Shutting down server...")

@@ -1,8 +1,9 @@
 package utils
 
 import (
-	"github.com/Olegsandrik/Exponenta/internal/usecase/models"
 	"regexp"
+
+	"github.com/Olegsandrik/Exponenta/internal/usecase/models"
 )
 
 var htmlTagRegex = regexp.MustCompile(`<[^>]*>`)

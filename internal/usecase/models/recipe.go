@@ -2,11 +2,12 @@ package models
 
 import (
 	"encoding/json"
+
 	"github.com/Olegsandrik/Exponenta/internal/delivery/dto"
 )
 
 type RecipeModel struct {
-	Id          int
+	ID          int
 	Name        string
 	Desc        string
 	Img         string
@@ -17,7 +18,7 @@ type RecipeModel struct {
 }
 
 type CurrentRecipeModel struct {
-	Id          int
+	ID          int
 	Name        string
 	CurrentStep CurrentStepRecipeModel
 }
@@ -32,7 +33,7 @@ type CurrentStepRecipeModel struct {
 
 func ConvertCurrentRecipeToDTO(recipe CurrentRecipeModel) dto.CurrentRecipeDto {
 	return dto.CurrentRecipeDto{
-		Id:          recipe.Id,
+		ID:          recipe.ID,
 		Name:        recipe.Name,
 		CurrentStep: ConvertCurrentStepToDTO(recipe.CurrentStep),
 	}
@@ -50,7 +51,7 @@ func ConvertCurrentStepToDTO(step CurrentStepRecipeModel) dto.CurrentStepRecipeD
 
 func ConvertDTOToCurrentRecipe(recipe dto.CurrentRecipeDto) CurrentRecipeModel {
 	return CurrentRecipeModel{
-		Id:          recipe.Id,
+		ID:          recipe.ID,
 		Name:        recipe.Name,
 		CurrentStep: ConvertDtoToCurrentStep(recipe.CurrentStep),
 	}
@@ -70,7 +71,7 @@ func ConvertDtoToRecipe(rt []dto.RecipeDto) []RecipeModel {
 	RecipeItems := make([]RecipeModel, 0, len(rt))
 	for _, r := range rt {
 		RecipeItems = append(RecipeItems, RecipeModel{
-			Id:          r.Id,
+			ID:          r.ID,
 			Name:        r.Name,
 			Desc:        r.Desc,
 			Img:         r.Img,
@@ -86,7 +87,7 @@ func ConvertRecipeToDto(rm []RecipeModel) []dto.RecipeDto {
 	RecipeItems := make([]dto.RecipeDto, 0, len(rm))
 	for _, r := range rm {
 		RecipeItems = append(RecipeItems, dto.RecipeDto{
-			Id:          r.Id,
+			ID:          r.ID,
 			Img:         r.Img,
 			Desc:        r.Desc,
 			Name:        r.Name,

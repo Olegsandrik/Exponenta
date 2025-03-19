@@ -29,7 +29,7 @@ CREATE TABLE current_recipe_step (
     step TEXT,
     ingredients JSON,
     equipment JSON,
-    length JSON DEFAULT 'null',
+    length JSON,
     FOREIGN KEY (user_id) REFERENCES current_recipe(user_id) ON DELETE CASCADE
 );
 

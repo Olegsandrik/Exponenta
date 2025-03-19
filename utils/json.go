@@ -3,8 +3,9 @@ package utils
 import (
 	"context"
 	"encoding/json"
-	"github.com/Olegsandrik/Exponenta/logger"
 	"net/http"
+
+	"github.com/Olegsandrik/Exponenta/logger"
 )
 
 type SuccessResponse struct {

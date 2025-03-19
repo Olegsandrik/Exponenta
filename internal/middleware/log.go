@@ -1,9 +1,10 @@
 package middleware
 
 import (
-	"github.com/google/uuid"
 	"log/slog"
 	"net/http"
+
+	"github.com/google/uuid"
 
 	"github.com/Olegsandrik/Exponenta/logger"
 )

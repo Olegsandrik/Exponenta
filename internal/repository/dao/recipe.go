@@ -3,11 +3,12 @@ package dao
 import (
 	"database/sql"
 	"encoding/json"
+
 	"github.com/Olegsandrik/Exponenta/internal/usecase/models"
 )
 
 type RecipeTable struct {
-	Id          int    `db:"id"`
+	ID          int    `db:"id"`
 	Name        string `db:"name"`
 	Desc        string `db:"description"`
 	Img         string `db:"image"`
@@ -17,7 +18,7 @@ type RecipeTable struct {
 }
 
 type CurrentRecipeTable struct {
-	Id          int             `db:"recipe_id"`
+	ID          int             `db:"recipe_id"`
 	Name        string          `db:"name"`
 	NumStep     int             `db:"step_num"`
 	Step        string          `db:"step"`
@@ -36,7 +37,7 @@ type CurrentStepRecipeTable struct {
 
 func ConvertDaoToCurrentRecipe(cr CurrentRecipeTable) models.CurrentRecipeModel {
 	return models.CurrentRecipeModel{
-		Id:   cr.Id,
+		ID:   cr.ID,
 		Name: cr.Name,
 		CurrentStep: models.CurrentStepRecipeModel{
 			NumStep:     cr.NumStep,
@@ -47,7 +48,7 @@ func ConvertDaoToCurrentRecipe(cr CurrentRecipeTable) models.CurrentRecipeModel 
 	}
 }
 
-func ConvertStringToSqlNullString(s sql.NullString) string {
+func ConvertStringToSQLNullString(s sql.NullString) string {
 	var length string
 	if s.Valid {
 		length = s.String
@@ -57,7 +58,7 @@ func ConvertStringToSqlNullString(s sql.NullString) string {
 	return length
 }
 
-func ConvertSqlNullStringToString(s string) sql.NullString {
+func ConvertSQLNullStringToString(s string) sql.NullString {
 	if s == "" || s == "NULL" {
 		return sql.NullString{Valid: false}
 	}
@@ -88,7 +89,7 @@ func ConvertDaoToRecipe(rt []RecipeTable) []models.RecipeModel {
 	RecipeItems := make([]models.RecipeModel, 0, len(rt))
 	for _, r := range rt {
 		RecipeItems = append(RecipeItems, models.RecipeModel{
-			Id:          r.Id,
+			ID:          r.ID,
 			Name:        r.Name,
 			Desc:        r.Desc,
 			Img:         r.Img,
@@ -105,7 +106,7 @@ func ConvertModelToDao(rm []models.RecipeModel) []RecipeTable {
 	RecipeItems := make([]RecipeTable, 0, len(rm))
 	for _, r := range rm {
 		RecipeItems = append(RecipeItems, RecipeTable{
-			Id:   r.Id,
+			ID:   r.ID,
 			Name: r.Name,
 			Desc: r.Desc,
 			Img:  r.Img,

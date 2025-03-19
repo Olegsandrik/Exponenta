@@ -4,38 +4,41 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/Olegsandrik/Exponenta/config"
-	"github.com/Olegsandrik/Exponenta/logger"
 	"log/slog"
 	"time"
 
-	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/Olegsandrik/Exponenta/config"
+	"github.com/Olegsandrik/Exponenta/logger"
+
 	"github.com/jmoiron/sqlx"
+
+	// Используется для регистрации драйвера PostgreSQL (pgx).
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 type Adapter struct {
 	db *sqlx.DB
 }
 
-func NewPostgresAdapter() (*Adapter, error) {
+func NewPostgresAdapter(config *config.Config) (*Adapter, error) {
 	psqlInfo := fmt.Sprintf(
 		"postgres://%s:%s@%s:%s/%s?sslmode=%s&search_path=%s",
-		config.POSTGRES_USER,
-		config.POSTGRES_PASSWD,
-		config.POSTGRES_ENDPOINT,
-		config.POSTGRES_PORT,
-		config.POSTGRES_DB_NAME,
-		config.POSTGRES_DISABLE,
-		config.POSTGRES_PUBLIC,
+		config.PostgresUser,
+		config.PostgresPasswd,
+		config.PostgresEndpoint,
+		config.PostgresPort,
+		config.PostgresDBName,
+		config.PostgresDisable,
+		config.PostgresPublic,
 	)
 
-	db, err := sqlx.Connect(config.POSTGRES_DRIVER_NAME, psqlInfo)
+	db, err := sqlx.Connect(config.PostgresDriverName, psqlInfo)
 	if err != nil {
 		return nil, fmt.Errorf("connection failed: %w", err)
 	}
 
-	db.SetMaxOpenConns(config.POSTGRES_MAX_OPEN_CONN)
-	db.SetConnMaxIdleTime(config.POSTGRES_CONN_IDLE_TIME)
+	db.SetMaxOpenConns(config.PostgresMaxOpenConn)
+	db.SetConnMaxIdleTime(config.PostgresConnIdleTime)
 
 	err = db.Ping()
 	if err != nil {
@@ -77,4 +80,16 @@ func (a *Adapter) QueryRow(ctx context.Context, query string, args ...interface{
 
 func (a *Adapter) BeginTx(ctx context.Context, opts *sql.TxOptions) (*sqlx.Tx, error) {
 	return a.db.BeginTxx(ctx, opts)
+}
+
+func (a *Adapter) QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
+	return a.db.QueryContext(ctx, query, args...)
+}
+
+func (a *Adapter) QueryxContext(ctx context.Context, query string, args ...interface{}) (*sqlx.Rows, error) {
+	return a.db.QueryxContext(ctx, query, args...)
+}
+
+func (a *Adapter) QueryRowxContext(ctx context.Context, query string, args ...interface{}) *sqlx.Row {
+	return a.db.QueryRowxContext(ctx, query, args...)
 }

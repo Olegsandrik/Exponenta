@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+
 	"github.com/Olegsandrik/Exponenta/internal/delivery/dto"
 	"github.com/Olegsandrik/Exponenta/internal/usecase/models"
 	"github.com/Olegsandrik/Exponenta/utils"
@@ -10,12 +11,12 @@ import (
 type CookingRecipeRepo interface {
 	GetAllRecipe(ctx context.Context, num int) ([]models.RecipeModel, error)
 	GetRecipeByID(ctx context.Context, id int) ([]models.RecipeModel, error)
-	EndCooking(ctx context.Context, uId uint) error
-	StartCooking(ctx context.Context, uId uint, recipeId int) error
-	GetCurrentRecipe(ctx context.Context, uId uint) (models.CurrentRecipeModel, error)
-	GetNextRecipeStep(ctx context.Context, uId uint) (models.CurrentStepRecipeModel, error)
-	GetPrevRecipeStep(ctx context.Context, uId uint) (models.CurrentStepRecipeModel, error)
-	GetCurrentStep(ctx context.Context, uId uint) (models.CurrentStepRecipeModel, error)
+	EndCooking(ctx context.Context, uID uint) error
+	StartCooking(ctx context.Context, uID uint, recipeID int) error
+	GetCurrentRecipe(ctx context.Context, uID uint) (models.CurrentRecipeModel, error)
+	GetNextRecipeStep(ctx context.Context, uID uint) (models.CurrentStepRecipeModel, error)
+	GetPrevRecipeStep(ctx context.Context, uID uint) (models.CurrentStepRecipeModel, error)
+	GetCurrentStep(ctx context.Context, uID uint) (models.CurrentStepRecipeModel, error)
 }
 
 type CookingRecipeUsecase struct {
@@ -56,15 +57,15 @@ func (u *CookingRecipeUsecase) GetRecipeByID(ctx context.Context, id int) (dto.R
 	return recipeDto[0], nil
 }
 
-func (u *CookingRecipeUsecase) StartCookingRecipe(ctx context.Context, recipeId int) (dto.CurrentStepRecipeDto, error) {
-	uId := uint(1)
+func (u *CookingRecipeUsecase) StartCookingRecipe(ctx context.Context, recipeID int) (dto.CurrentStepRecipeDto, error) {
+	uID := uint(1)
 
-	err := u.repo.StartCooking(ctx, uId, recipeId)
+	err := u.repo.StartCooking(ctx, uID, recipeID)
 	if err != nil {
 		return dto.CurrentStepRecipeDto{}, err
 	}
 
-	currentRecipeStepModel, err := u.repo.GetCurrentStep(ctx, uId)
+	currentRecipeStepModel, err := u.repo.GetCurrentStep(ctx, uID)
 	if err != nil {
 		return dto.CurrentStepRecipeDto{}, err
 	}
@@ -75,9 +76,9 @@ func (u *CookingRecipeUsecase) StartCookingRecipe(ctx context.Context, recipeId 
 }
 
 func (u *CookingRecipeUsecase) EndCookingRecipe(ctx context.Context) error {
-	uId := uint(1)
+	uID := uint(1)
 
-	err := u.repo.EndCooking(ctx, uId)
+	err := u.repo.EndCooking(ctx, uID)
 	if err != nil {
 		return err
 	}
@@ -86,9 +87,9 @@ func (u *CookingRecipeUsecase) EndCookingRecipe(ctx context.Context) error {
 }
 
 func (u *CookingRecipeUsecase) GetCurrentRecipe(ctx context.Context) (dto.CurrentRecipeDto, error) {
-	uId := uint(1)
+	uID := uint(1)
 
-	currentRecipe, err := u.repo.GetCurrentRecipe(ctx, uId)
+	currentRecipe, err := u.repo.GetCurrentRecipe(ctx, uID)
 	if err != nil {
 		return dto.CurrentRecipeDto{}, err
 	}
@@ -99,9 +100,9 @@ func (u *CookingRecipeUsecase) GetCurrentRecipe(ctx context.Context) (dto.Curren
 }
 
 func (u *CookingRecipeUsecase) NextStepRecipe(ctx context.Context) (dto.CurrentStepRecipeDto, error) {
-	uId := uint(1)
+	uID := uint(1)
 
-	nextStep, err := u.repo.GetNextRecipeStep(ctx, uId)
+	nextStep, err := u.repo.GetNextRecipeStep(ctx, uID)
 	if err != nil {
 		return dto.CurrentStepRecipeDto{}, err
 	}
@@ -112,9 +113,9 @@ func (u *CookingRecipeUsecase) NextStepRecipe(ctx context.Context) (dto.CurrentS
 }
 
 func (u *CookingRecipeUsecase) PreviousStepRecipe(ctx context.Context) (dto.CurrentStepRecipeDto, error) {
-	uId := uint(1)
+	uID := uint(1)
 
-	prevStep, err := u.repo.GetPrevRecipeStep(ctx, uId)
+	prevStep, err := u.repo.GetPrevRecipeStep(ctx, uID)
 	if err != nil {
 		return dto.CurrentStepRecipeDto{}, err
 	}

@@ -8,6 +8,9 @@ run-prod:
 stop-prod:
 	docker-compose -f Docker-compose.yml down
 
+linter:
+	golangci-lint run --config=golangci.yaml
+
 setup:
 	go install github.com/pressly/goose/v3/cmd/goose@latest
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.57.1

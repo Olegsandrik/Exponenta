@@ -3,7 +3,7 @@ package dto
 import "encoding/json"
 
 type RecipeDto struct {
-	Id          int             `json:"id,omitempty"`
+	ID          int             `json:"id,omitempty"`
 	Name        string          `json:"name,omitempty"`
 	Desc        string          `json:"description,omitempty"`
 	Img         string          `json:"img,omitempty"`
@@ -14,7 +14,7 @@ type RecipeDto struct {
 }
 
 type CurrentRecipeDto struct {
-	Id          int                  `json:"id,omitempty"`
+	ID          int                  `json:"id,omitempty"`
 	Name        string               `json:"name,omitempty"`
 	CurrentStep CurrentStepRecipeDto `json:"currentStep,omitempty"`
 }

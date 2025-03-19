@@ -1,35 +1,55 @@
 package config
 
 import (
-	_ "github.com/joho/godotenv/autoload"
 	"os"
 	"strconv"
 	"time"
+
+	// Используется для загрузки переменных окружения из .env файла.
+	_ "github.com/joho/godotenv/autoload"
 )
 
-var (
+type Config struct {
 	// Postgres
-	POSTGRES_DRIVER_NAME    = getEnvStr("POSTGRES_DRIVER_NAME", "")
-	POSTGRES_PASSWD         = getEnvStr("POSTGRES_PASSWD", "")
-	POSTGRES_ENDPOINT       = getEnvStr("POSTGRES_ENDPOINT", "")
-	POSTGRES_USER           = getEnvStr("POSTGRES_USER", "")
-	POSTGRES_DB_NAME        = getEnvStr("POSTGRES_DB_NAME", "")
-	POSTGRES_PORT           = getEnvStr("POSTGRES_PORT", "")
-	POSTGRES_DISABLE        = getEnvStr("POSTGRES_DISABLE", "")
-	POSTGRES_PUBLIC         = getEnvStr("POSTGRES_PUBLIC", "")
-	POSTGRES_MAX_OPEN_CONN  = getEnvInt("POSTGRES_MAX_OPEN_CONN", 10)
-	POSTGRES_CONN_IDLE_TIME = getEnvTime("POSTGRES_CONN_IDLE_TIME", 10*time.Second)
+	PostgresDriverName   string
+	PostgresPasswd       string
+	PostgresEndpoint     string
+	PostgresUser         string
+	PostgresDBName       string
+	PostgresPort         string
+	PostgresDisable      string
+	PostgresPublic       string
+	PostgresMaxOpenConn  int
+	PostgresConnIdleTime time.Duration
 
 	// Server
+	ServerTimeout time.Duration
+	Port          string
+}
 
-	SERVER_TIMEOUT = getEnvTime("SERVER_TIMEOUT", 5*time.Second)
-)
+func NewConfig() *Config {
+	return &Config{
+		PostgresDriverName:   getEnvStr("POSTGRES_DRIVER_NAME", ""),
+		PostgresPasswd:       getEnvStr("POSTGRES_PASSWD", ""),
+		PostgresEndpoint:     getEnvStr("POSTGRES_ENDPOINT", ""),
+		PostgresUser:         getEnvStr("POSTGRES_USER", ""),
+		PostgresDBName:       getEnvStr("POSTGRES_DB_NAME", ""),
+		PostgresPort:         getEnvStr("POSTGRES_PORT", ""),
+		PostgresDisable:      getEnvStr("POSTGRES_DISABLE", ""),
+		PostgresPublic:       getEnvStr("POSTGRES_PUBLIC", ""),
+		PostgresMaxOpenConn:  getEnvInt("POSTGRES_MAX_OPEN_CONN", 10),
+		PostgresConnIdleTime: getEnvTime("POSTGRES_CONN_IDLE_TIME", 10*time.Second),
 
-func getEnvStr(key, zeroKey string) string {
+		ServerTimeout: getEnvTime("SERVER_TIMEOUT", 5*time.Second),
+		Port:          getEnvStr("SERVER_PORT", ":8080"),
+	}
+}
+
+func getEnvStr(key, defaultValue string) string {
 	if value, ok := os.LookupEnv(key); ok {
 		return value
 	}
-	return zeroKey
+	return defaultValue
 }
 
 func getEnvTime(key string, defaultValue time.Duration) time.Duration {
@@ -43,13 +63,13 @@ func getEnvTime(key string, defaultValue time.Duration) time.Duration {
 	return defaultValue
 }
 
-func getEnvInt(key string, zeroKey int) int {
+func getEnvInt(key string, defaultValue int) int {
 	if valueStr, ok := os.LookupEnv(key); ok {
 		value, err := strconv.Atoi(valueStr)
 		if err != nil {
-			return zeroKey
+			return defaultValue
 		}
 		return value
 	}
-	return zeroKey
+	return defaultValue
 }

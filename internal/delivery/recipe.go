@@ -2,11 +2,12 @@ package delivery
 
 import (
 	"context"
+	"net/http"
+	"strconv"
+
 	"github.com/Olegsandrik/Exponenta/internal/delivery/dto"
 	"github.com/Olegsandrik/Exponenta/utils"
 	"github.com/gorilla/mux"
-	"net/http"
-	"strconv"
 )
 
 type CookingRecipeUsecase interface {
@@ -83,12 +84,11 @@ func (h *CookingRecipeHandler) GetAllRecipes(w http.ResponseWriter, r *http.Requ
 		Status: http.StatusOK,
 		Data:   recipeData,
 	})
-
 }
 
 func (h *CookingRecipeHandler) GetRecipeByID(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	recipeIdStr, ok := mux.Vars(r)["id"]
+	recipeIDStr, ok := mux.Vars(r)["id"]
 	if !ok {
 		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 			Status: http.StatusBadRequest,
@@ -98,7 +98,7 @@ func (h *CookingRecipeHandler) GetRecipeByID(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	recipeId, err := strconv.Atoi(recipeIdStr)
+	recipeID, err := strconv.Atoi(recipeIDStr)
 	if err != nil {
 		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 			Status: http.StatusBadRequest,
@@ -108,7 +108,7 @@ func (h *CookingRecipeHandler) GetRecipeByID(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	recipe, err := h.usecase.GetRecipeByID(ctx, recipeId)
+	recipe, err := h.usecase.GetRecipeByID(ctx, recipeID)
 	if err != nil {
 		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 			Status: http.StatusInternalServerError,
@@ -239,13 +239,28 @@ func (h *CookingRecipeHandler) PrevStepCookingRecipe(w http.ResponseWriter, r *h
 }
 
 func (h *CookingRecipeHandler) GetAllTimersCookingRecipe(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 
+	utils.JSONResponse(ctx, w, 200, utils.SuccessResponse{
+		Status: http.StatusOK,
+		Data:   nil,
+	})
 }
 
 func (h *CookingRecipeHandler) AddTimerCookingRecipe(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 
+	utils.JSONResponse(ctx, w, 200, utils.SuccessResponse{
+		Status: http.StatusOK,
+		Data:   nil,
+	})
 }
 
 func (h *CookingRecipeHandler) FinishTimerCookingRecipe(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 
+	utils.JSONResponse(ctx, w, 200, utils.SuccessResponse{
+		Status: http.StatusOK,
+		Data:   nil,
+	})
 }
