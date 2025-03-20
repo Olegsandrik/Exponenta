@@ -195,7 +195,7 @@ func (repo *CookingRecipeRepo) insertCurrentRecipe(
 
 func (repo *CookingRecipeRepo) insertRecipeSteps(
 	ctx context.Context, tx *sqlx.Tx, uID uint, recipeID int, stepsJSON string) error {
-	var steps []dao.CurrentStepRecipeTable
+	var steps []dao.CurrentRecipeStepTable
 
 	if err := json.Unmarshal([]byte(stepsJSON), &steps); err != nil {
 		logger.Error(ctx, fmt.Sprintf("unmarshal error %s with recipe %d", err, recipeID))
@@ -310,25 +310,25 @@ func (repo *CookingRecipeRepo) updateCurrentStepTx(ctx context.Context, tx *sqlx
 
 func (repo *CookingRecipeRepo) getCurrentStep(
 	ctx context.Context, queryer sqlx.QueryerContext, uID uint) (models.CurrentStepRecipeModel, error) {
-	CurrentStep := make([]dao.CurrentStepRecipeTable, 0, 1)
+	currentStep := make([]dao.CurrentRecipeStepTable, 0, 1)
 
 	q := "SELECT cs.step_num, cs.step, cs.ingredients, cs.equipment, cs.length " +
 		"FROM public.current_recipe as cr LEFT JOIN public.current_recipe_step as cs " +
 		"ON cr.current_step_num = cs.step_num AND cr.user_id=cs.user_id " +
 		"WHERE cr.user_id = $1;"
 
-	err := sqlx.SelectContext(ctx, queryer, &CurrentStep, q, uID)
+	err := sqlx.SelectContext(ctx, queryer, &currentStep, q, uID)
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf("error getting recipe step row: %s with recipeId: %d", err.Error(), uID))
 		return models.CurrentStepRecipeModel{}, fmt.Errorf("failed to get step cooking")
 	}
 
-	if len(CurrentStep) == 0 {
+	if len(currentStep) == 0 {
 		logger.Error(ctx, fmt.Sprintf("recipe step not found with userId: %d", uID))
 		return models.CurrentStepRecipeModel{}, fmt.Errorf("failed to get step cooking")
 	}
 
-	currentStepModel := dao.ConvertDaoToCurrentStepRecipe(CurrentStep[0])
+	currentStepModel := dao.ConvertDaoToCurrentStepRecipe(currentStep[0])
 
 	return currentStepModel, nil
 }
@@ -530,4 +530,34 @@ func (repo *CookingRecipeRepo) GetTimersRecipe(ctx context.Context, uID uint) ([
 	logger.Info(ctx, fmt.Sprintf("get timers for userId: %d", uID))
 
 	return timersModel, nil
+}
+
+func (repo *CookingRecipeRepo) GetCurrentRecipeStepByNum(
+	ctx context.Context, uID uint, stepNum int) (models.CurrentStepRecipeModel, error) {
+	q := "SELECT step, step_num, ingredients, equipment, length FROM public.current_recipe_step " +
+		"WHERE user_id=$1 AND step_num=$2"
+
+	recipeStepRow := make([]dao.CurrentRecipeStepTable, 0, 1)
+
+	err := repo.storage.Select(ctx, &recipeStepRow, q, uID, stepNum)
+
+	if err != nil {
+		logger.Error(ctx, fmt.Sprintf(
+			"error getting recipe step: %s with userId: %d, stepNum: %d",
+			err.Error(),
+			uID,
+			stepNum),
+		)
+		return models.CurrentStepRecipeModel{}, fmt.Errorf("failed to get recipe step")
+	}
+
+	if len(recipeStepRow) == 0 {
+		logger.Error(ctx, fmt.Sprintf("not found recipe step with userId: %d, stepNum: %d", uID, stepNum))
+		return models.CurrentStepRecipeModel{}, fmt.Errorf("failed to get recipe step")
+	}
+
+	logger.Info(ctx, fmt.Sprintf("get recipe step for userId: %d, stepNum: %d", uID, stepNum))
+
+	recipeStep := dao.ConvertDaoToCurrentStepRecipe(recipeStepRow[0])
+	return recipeStep, nil
 }

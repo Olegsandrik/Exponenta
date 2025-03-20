@@ -30,7 +30,7 @@ type CurrentRecipeTable struct {
 	Length      json.RawMessage `db:"length"`
 }
 
-type CurrentStepRecipeTable struct {
+type CurrentRecipeStepTable struct {
 	NumStep     int             `json:"number" db:"step_num"`
 	Step        string          `json:"step" db:"step"`
 	Ingredients json.RawMessage `json:"ingredients"`
@@ -107,7 +107,7 @@ func ConvertSQLNullStringToString(s string) sql.NullString {
 	return sql.NullString{String: s, Valid: true}
 }
 
-func ConvertDaoToCurrentStepRecipe(cs CurrentStepRecipeTable) models.CurrentStepRecipeModel {
+func ConvertDaoToCurrentStepRecipe(cs CurrentRecipeStepTable) models.CurrentStepRecipeModel {
 	return models.CurrentStepRecipeModel{
 		NumStep:     cs.NumStep,
 		Step:        cs.Step,
@@ -117,8 +117,8 @@ func ConvertDaoToCurrentStepRecipe(cs CurrentStepRecipeTable) models.CurrentStep
 	}
 }
 
-func ConvertCurrentStepRecipeToDAO(cs models.CurrentStepRecipeModel) CurrentStepRecipeTable {
-	return CurrentStepRecipeTable{
+func ConvertCurrentStepRecipeToDAO(cs models.CurrentStepRecipeModel) CurrentRecipeStepTable {
+	return CurrentRecipeStepTable{
 		NumStep:     cs.NumStep,
 		Step:        cs.Step,
 		Ingredients: cs.Ingredients,
