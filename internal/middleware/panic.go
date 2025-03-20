@@ -2,10 +2,10 @@ package middleware
 
 import (
 	"fmt"
-	"github.com/Olegsandrik/Exponenta/utils"
 	"net/http"
 
 	"github.com/Olegsandrik/Exponenta/logger"
+	"github.com/Olegsandrik/Exponenta/utils"
 )
 
 func PanicMiddleware(next http.Handler) http.Handler {
@@ -14,6 +14,7 @@ func PanicMiddleware(next http.Handler) http.Handler {
 			defer func() {
 				if err := recover(); err != nil {
 					logger.Error(r.Context(), fmt.Sprintf("panic recovered: %e", err))
+
 					utils.JSONResponse(r.Context(), w, 200, utils.ErrResponse{
 						Status: http.StatusInternalServerError,
 						Msg:    "internal server error",

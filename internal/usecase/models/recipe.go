@@ -31,6 +31,24 @@ type CurrentStepRecipeModel struct {
 	Length      json.RawMessage
 }
 
+type TimerRecipeModel struct {
+	Length  json.RawMessage
+	Step    string
+	StepNum int
+}
+
+func ConvertTimersToDTO(steps []TimerRecipeModel) []dto.TimerRecipeDto {
+	StepItems := make([]dto.TimerRecipeDto, len(steps))
+	for i, step := range steps {
+		StepItems[i] = dto.TimerRecipeDto{
+			Length:  step.Length,
+			Step:    step.Step,
+			StepNum: step.StepNum,
+		}
+	}
+	return StepItems
+}
+
 func ConvertCurrentRecipeToDTO(recipe CurrentRecipeModel) dto.CurrentRecipeDto {
 	return dto.CurrentRecipeDto{
 		ID:          recipe.ID,

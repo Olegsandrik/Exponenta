@@ -14,11 +14,10 @@ CREATE TABLE IF NOT EXISTS current_recipe (
 CREATE TABLE timers (
     timer_id SERIAL PRIMARY KEY,
     user_id INT,
-    recipe_id INT,
     step_num INT,
     description TEXT,
-    start_time TIMESTAMP NOT NULL DEFAULT NOW(),
     end_time TIMESTAMP,
+    UNIQUE (user_id, step_num),
     FOREIGN KEY (user_id) REFERENCES current_recipe(user_id) ON DELETE CASCADE
 );
 

@@ -3,6 +3,9 @@ package dao
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
+	"math"
+	"time"
 
 	"github.com/Olegsandrik/Exponenta/internal/usecase/models"
 )
@@ -33,6 +36,45 @@ type CurrentStepRecipeTable struct {
 	Ingredients json.RawMessage `json:"ingredients"`
 	Equipment   json.RawMessage `json:"equipment" db:"equipment"`
 	Length      json.RawMessage `json:"length" db:"length"`
+}
+
+type TimerTable struct {
+	StepNum     int       `db:"step_num"`
+	Description string    `db:"description"`
+	EndTime     time.Time `db:"end_time"`
+}
+
+type LengthTimer struct {
+	Number int    `json:"number"`
+	Unit   string `json:"unit"`
+}
+
+func ConvertTimerToDAO(tt []TimerTable) ([]models.TimerRecipeModel, error) {
+	timers := make([]models.TimerRecipeModel, len(tt))
+	for i, timer := range tt {
+		diff := int(math.Round(time.Until(timer.EndTime).Seconds()))
+
+		if diff < 0 {
+			diff = 0
+		}
+
+		length := LengthTimer{
+			Unit:   "seconds",
+			Number: diff,
+		}
+
+		jsonLength, err := json.Marshal(length)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal length: %w", err)
+		}
+
+		timers[i] = models.TimerRecipeModel{
+			Step:    timer.Description,
+			Length:  jsonLength,
+			StepNum: timer.StepNum,
+		}
+	}
+	return timers, nil
 }
 
 func ConvertDaoToCurrentRecipe(cr CurrentRecipeTable) models.CurrentRecipeModel {

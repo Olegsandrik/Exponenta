@@ -17,6 +17,9 @@ type CookingRecipeRepo interface {
 	GetNextRecipeStep(ctx context.Context, uID uint) (models.CurrentStepRecipeModel, error)
 	GetPrevRecipeStep(ctx context.Context, uID uint) (models.CurrentStepRecipeModel, error)
 	GetCurrentStep(ctx context.Context, uID uint) (models.CurrentStepRecipeModel, error)
+	AddTimerToRecipe(ctx context.Context, uID uint, StepNum int, timeSec int, description string) error
+	DeleteTimerFromRecipe(ctx context.Context, uID uint, StepNum int) error
+	GetTimersRecipe(ctx context.Context, uID uint) ([]models.TimerRecipeModel, error)
 }
 
 type CookingRecipeUsecase struct {
@@ -123,4 +126,44 @@ func (u *CookingRecipeUsecase) PreviousStepRecipe(ctx context.Context) (dto.Curr
 	prevStepDto := models.ConvertCurrentStepToDTO(prevStep)
 
 	return prevStepDto, nil
+}
+
+func (u *CookingRecipeUsecase) AddTimerRecipe(ctx context.Context, stepNum int, timeSec int) error {
+	uID := uint(1)
+
+	currentStep, err := u.repo.GetCurrentStep(ctx, uID)
+	if err != nil {
+		return err
+	}
+
+	err = u.repo.AddTimerToRecipe(ctx, uID, stepNum, timeSec, currentStep.Step)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (u *CookingRecipeUsecase) DeleteTimerRecipe(ctx context.Context, stepNum int) error {
+	uID := uint(1)
+
+	err := u.repo.DeleteTimerFromRecipe(ctx, uID, stepNum)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (u *CookingRecipeUsecase) GetTimersRecipe(ctx context.Context) ([]dto.TimerRecipeDto, error) {
+	uID := uint(1)
+
+	timersModels, err := u.repo.GetTimersRecipe(ctx, uID)
+	if err != nil {
+		return nil, err
+	}
+
+	timersDto := models.ConvertTimersToDTO(timersModels)
+
+	return timersDto, nil
 }

@@ -26,3 +26,9 @@ type CurrentStepRecipeDto struct {
 	Equipment   json.RawMessage `json:"equipment,omitempty"`
 	Length      json.RawMessage `json:"time,omitempty"`
 }
+
+type TimerRecipeDto struct {
+	Length  json.RawMessage `json:"time,omitempty"`
+	Step    string          `json:"description,omitempty"`
+	StepNum int             `json:"stepNum,omitempty"`
+}
