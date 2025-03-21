@@ -20,6 +20,7 @@ type ErrResponse struct {
 }
 
 func JSONResponse(ctx context.Context, w http.ResponseWriter, statusCode int, message interface{}) {
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 	err := json.NewEncoder(w).Encode(message)
 	if err != nil {
