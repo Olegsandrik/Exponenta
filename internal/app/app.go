@@ -12,11 +12,13 @@ import (
 	"time"
 
 	"github.com/Olegsandrik/Exponenta/config"
+	"github.com/Olegsandrik/Exponenta/internal/adapters/elasticsearch"
 	"github.com/Olegsandrik/Exponenta/internal/adapters/postgres"
 	"github.com/Olegsandrik/Exponenta/internal/delivery"
 	"github.com/Olegsandrik/Exponenta/internal/middleware"
 	"github.com/Olegsandrik/Exponenta/internal/repository"
 	"github.com/Olegsandrik/Exponenta/internal/usecase"
+
 	"github.com/gorilla/mux"
 )
 
@@ -74,12 +76,36 @@ func InitApp() *App {
 
 	server := InitServer(r, cfg)
 
+	// ElasticSearch
+
+	elasticsearchAdapter, err := elasticsearch.NewElasticsearchAdapter(cfg)
+
+	if err != nil {
+		panic(err)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), _timeout)
+	defer cancel()
+
+	err = elasticsearch.InitElasticSearchData(ctx, elasticsearchAdapter, postgresAdapter)
+
+	if err != nil {
+		panic(err)
+	}
+
 	// Cooking recipe
 
 	cookingRecipeRepo := repository.NewCookingRecipeRepo(postgresAdapter)
 	cookingRecipeUsecase := usecase.NewCookingRecipeUsecase(cookingRecipeRepo)
 	cookingRecipeHandler := delivery.NewCookingRecipeHandler(cookingRecipeUsecase)
 	cookingRecipeHandler.InitRouter(apiRouter)
+
+	// Search
+
+	searchRepo := repository.NewSearchRepository(elasticsearchAdapter)
+	searchUsecase := usecase.NewSearchUsecase(searchRepo)
+	searchHandler := delivery.NewSearchHandler(searchUsecase)
+	searchHandler.InitRouter(apiRouter)
 
 	closers := []io.Closer{postgresAdapter}
 	return &App{

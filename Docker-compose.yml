@@ -11,6 +11,19 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  elasticsearch:
+    image: bitnami/elasticsearch:7.17.20-debian-12-r2
+    ports:
+      - '9200:9200'
+    environment:
+      node.name: 'es01'
+      bootstrap.memory_lock: true
+      ES_JAVA_OPTS: ${ES_JAVA_OPTS}
+      ELASTIC_USERNAME: ${ELASTIC_USERNAME}
+      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD}
+    volumes:
+      - elasticsearch_data:/bitnami/elasticsearch/data
+
   myAPI:
     image: 'exponent-image'
     environment:
@@ -27,12 +40,17 @@ services:
       - POSTGRES_CONN_IDLE_TIME=${POSTGRES_CONN_IDLE_TIME}
       - POSTGRES_MIGRATION_HOST=${POSTGRES_MIGRATION_HOST}
       - SERVER_PORT=${SERVER_PORT}
+      - ELASTIC_USERNAME=${ELASTIC_USERNAME}
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - ELASTIC_ADDRESS=${ELASTIC_ADDRESS}
 
     ports:
       - "8080:8080"
     depends_on:
       - postgres
+      - elasticsearch
 
 volumes:
   postgres_data:
+  elasticsearch_data:
 

@@ -25,6 +25,11 @@ type Config struct {
 	// Server
 	ServerTimeout time.Duration
 	Port          string
+
+	// Elasticsearch
+	ElasticsearchAddress  string
+	ElasticsearchUsername string
+	ElasticsearchPassword string
 }
 
 func NewConfig() *Config {
@@ -42,6 +47,10 @@ func NewConfig() *Config {
 
 		ServerTimeout: getEnvTime("SERVER_TIMEOUT", 5*time.Second),
 		Port:          getEnvStr("SERVER_PORT", ":8080"),
+
+		ElasticsearchAddress:  getEnvStr("ELASTIC_ADDRESS", ""),
+		ElasticsearchUsername: getEnvStr("ELASTIC_USERNAME", ""),
+		ElasticsearchPassword: getEnvStr("ELASTIC_PASSWORD", ""),
 	}
 }
 
