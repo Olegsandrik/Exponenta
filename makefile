@@ -2,8 +2,11 @@ include .env
 export $(shell sed 's/=.*//' .env)
 
 run-prod:
+	docker-compose -f Docker-compose.yml up -d postgres elasticsearch
 	docker build -t exponent-image .
-	docker-compose -f Docker-compose.yml up -d
+	sleep 1
+	docker-compose -f Docker-compose.yml up -d myAPI
+
 
 stop-prod:
 	docker-compose -f Docker-compose.yml down

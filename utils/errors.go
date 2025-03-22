@@ -8,6 +8,7 @@ import (
 var (
 	NoFoundErr                       = errors.New("results not found")
 	FailToSearchErr                  = errors.New("failed to search")
+	FailToGetSuggestErr              = errors.New("failed to get suggest")
 	FailToGetRecipesErr              = fmt.Errorf("failed to get recipes")
 	FailToGetRecipeByIDErr           = fmt.Errorf("failed to get recipe by id")
 	FailToEndCookingErr              = fmt.Errorf("failed to end cooking")

@@ -4,6 +4,18 @@ import (
 	"github.com/Olegsandrik/Exponenta/internal/usecase/models"
 )
 
+type ResponseElasticSuggestIndex struct {
+	Hits struct {
+		Hits []struct {
+			Source Suggest `json:"_source"`
+		} `json:"hits"`
+	} `json:"hits"`
+}
+
+type Suggest struct {
+	Name string `json:"name"`
+}
+
 type ResponseElasticRecipeIndex struct {
 	Hits struct {
 		Hits []struct {
@@ -23,5 +35,16 @@ func ConvertResponseElasticRecipeIndexToModel(resp ResponseElasticRecipeIndex) [
 			Desc: item.Source.Desc,
 		})
 	}
+
+	return result
+}
+
+func ConvertResponseElasticSuggestIndexToModel(resp ResponseElasticSuggestIndex) models.SuggestResponseModel {
+	var result models.SuggestResponseModel
+
+	for _, item := range resp.Hits.Hits {
+		result.Suggestions = append(result.Suggestions, item.Source.Name)
+	}
+
 	return result
 }

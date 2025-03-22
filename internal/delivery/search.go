@@ -13,6 +13,7 @@ import (
 
 type SearchUsecase interface {
 	Search(ctx context.Context, query string) (dto.SearchResponseDto, error)
+	Suggest(ctx context.Context, query string) (dto.SuggestResponseDto, error)
 }
 
 type SearchHandler struct {
@@ -31,6 +32,7 @@ func (h *SearchHandler) InitRouter(r *mux.Router) {
 	h.router = r.PathPrefix("/search").Subrouter()
 	{
 		h.router.HandleFunc("", h.Search).Methods("GET")
+		h.router.HandleFunc("/suggest", h.Suggest).Methods("GET")
 	}
 }
 
@@ -70,5 +72,34 @@ func (h *SearchHandler) Search(w http.ResponseWriter, r *http.Request) {
 	utils.JSONResponse(ctx, w, 200, utils.SuccessResponse{
 		Status: http.StatusOK,
 		Data:   searchResponse,
+	})
+}
+
+func (h *SearchHandler) Suggest(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	query := r.URL.Query().Get("query")
+	if query == "" {
+		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+			Status: http.StatusBadRequest,
+			Msg:    "query parameter not found",
+			MsgRus: "не найдена строчка поискового запроса",
+		})
+		return
+	}
+
+	suggestResponse, err := h.usecase.Suggest(ctx, query)
+
+	if err != nil {
+		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+			Status: http.StatusInternalServerError,
+			Msg:    err.Error(),
+			MsgRus: "не получилось найти подсказку",
+		})
+		return
+	}
+
+	utils.JSONResponse(ctx, w, 200, utils.SuccessResponse{
+		Status: http.StatusOK,
+		Data:   suggestResponse,
 	})
 }

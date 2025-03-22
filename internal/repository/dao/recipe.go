@@ -11,10 +11,10 @@ import (
 )
 
 type RecipeTable struct {
-	ID          int    `db:"id" json:"id"`
-	Name        string `db:"name" json:"name"`
-	Desc        string `db:"description" json:"description"`
-	Img         string `db:"image" json:"image"`
+	ID          int    `db:"id" json:"id,omitempty"`
+	Name        string `db:"name" json:"name,omitempty"`
+	Desc        string `db:"description" json:"description,omitempty"`
+	Img         string `db:"image" json:"image,omitempty"`
 	CookingTime int    `db:"ready_in_minutes" json:"cookingTime,omitempty"`
 	ServingsNum int    `db:"servings" json:"servingsNum,omitempty"`
 	Steps       string `db:"steps" json:"steps,omitempty"`

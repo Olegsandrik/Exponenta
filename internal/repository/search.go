@@ -93,3 +93,51 @@ func (repo *SearchRepository) Search(ctx context.Context, query string) (models.
 		Recipes: result,
 	}, nil
 }
+
+func (repo *SearchRepository) Suggest(ctx context.Context, query string) (models.SuggestResponseModel, error) {
+	q := `{
+	  "query": {
+		"match": {
+		  "name": {
+			"query": "%s",
+			"operator": "and"
+		  }
+		}
+	  },
+	  "size":5
+	}`
+
+	res, err := repo.Adapter.ElasticClient.Search(
+		repo.Adapter.ElasticClient.Search.WithContext(ctx),
+		repo.Adapter.ElasticClient.Search.WithIndex(elasticsearch.SuggestIndex),
+		repo.Adapter.ElasticClient.Search.WithBody(strings.NewReader(fmt.Sprintf(q, query))),
+	)
+
+	defer res.Body.Close()
+
+	if err != nil {
+		logger.Error(ctx, fmt.Sprintf("suggest err: %e with query: %s", err, query))
+		return models.SuggestResponseModel{}, utils.FailToGetSuggestErr
+	}
+
+	var response dao.ResponseElasticSuggestIndex
+
+	logger.Info(ctx, fmt.Sprintf("%s", res.String()))
+
+	err = json.NewDecoder(res.Body).Decode(&response)
+
+	if err != nil {
+		logger.Error(ctx, fmt.Sprintf("suggest decode error: %e with query: %s", err, query))
+		return models.SuggestResponseModel{}, utils.FailToGetSuggestErr
+	}
+
+	if len(response.Hits.Hits) == 0 {
+		logger.Info(ctx, fmt.Sprintf("success empty response query: %s", query))
+		return models.SuggestResponseModel{}, nil
+	}
+
+	result := dao.ConvertResponseElasticSuggestIndexToModel(response)
+
+	logger.Info(ctx, fmt.Sprintf("success query: %s", query))
+	return result, nil
+}

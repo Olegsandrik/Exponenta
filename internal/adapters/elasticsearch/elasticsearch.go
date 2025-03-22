@@ -20,11 +20,13 @@ func NewElasticsearchAdapter(cfg *config.Config) (*Adapter, error) {
 		return nil, err
 	}
 
-	_, err = client.Ping()
+	res, err := client.Ping()
 
 	if err != nil {
 		return nil, err
 	}
+
+	defer res.Body.Close()
 
 	return &Adapter{
 		ElasticClient: client,
