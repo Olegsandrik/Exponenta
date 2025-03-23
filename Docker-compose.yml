@@ -30,7 +30,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 1800m
+          memory: 2048m
 
   myAPI:
     image: 'exponent-image'

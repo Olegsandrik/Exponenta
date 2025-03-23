@@ -4,7 +4,6 @@ export $(shell sed 's/=.*//' .env)
 run-prod:
 	docker-compose -f Docker-compose.yml up -d postgres elasticsearch
 	docker build -t exponent-image .
-	sleep 1
 	docker-compose -f Docker-compose.yml up -d myAPI
 
 
@@ -23,3 +22,6 @@ migrate-up:
 
 migrate-down:
 	goose -dir db/migrations postgres "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWD}@${POSTGRES_MIGRATION_HOST}:${POSTGRES_PORT}/${POSTGRES_DB_NAME}?sslmode=disable" down
+
+vendor:
+	go mod vendor
