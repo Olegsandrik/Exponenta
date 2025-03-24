@@ -24,20 +24,20 @@ type CurrentRecipeDto struct {
 
 type CurrentStepRecipeDto struct {
 	NumStep     int             `json:"number,omitempty"`
-	Step        string          `json:"description,omitempty"`
+	Step        string          `json:"step,omitempty"`
 	Ingredients json.RawMessage `json:"ingredients,omitempty"`
 	Equipment   json.RawMessage `json:"equipment,omitempty"`
-	Length      json.RawMessage `json:"time,omitempty"`
+	Length      json.RawMessage `json:"length,omitempty"`
 }
 
 type TimerRecipeDto struct {
-	Length  json.RawMessage `json:"time,omitempty"`
-	Step    string          `json:"description,omitempty"`
+	Length  json.RawMessage `json:"length,omitempty"`
+	Step    string          `json:"step,omitempty"`
 	StepNum int             `json:"stepNum,omitempty"`
 }
 
 type TimerRecipeDataDto struct {
-	Time    int `json:"time"`
+	Time    int `json:"length"`
 	StepNum int `json:"step"`
 }
 
