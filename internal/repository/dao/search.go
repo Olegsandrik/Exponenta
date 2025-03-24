@@ -1,6 +1,8 @@
 package dao
 
 import (
+	"encoding/json"
+
 	"github.com/Olegsandrik/Exponenta/internal/usecase/models"
 )
 
@@ -22,6 +24,26 @@ type ResponseElasticRecipeIndex struct {
 			Source RecipeTable `json:"_source"`
 		} `json:"hits"`
 	} `json:"hits"`
+}
+
+type DishTypesDao struct {
+	DishTypes []string
+}
+
+type DietsDao struct {
+	Diets string
+}
+
+type TimeDao struct {
+	Min int `db:"min"`
+	Max int `db:"max"`
+}
+
+func ConvertTimeDaoToModel(tm TimeDao) models.TimeModel {
+	return models.TimeModel{
+		Min: tm.Min,
+		Max: tm.Max,
+	}
 }
 
 func ConvertResponseElasticRecipeIndexToModel(resp ResponseElasticRecipeIndex) []models.RecipeModel {
@@ -47,4 +69,23 @@ func ConvertResponseElasticSuggestIndexToModel(resp ResponseElasticSuggestIndex)
 	}
 
 	return result
+}
+
+func MakeSet(items []json.RawMessage) (map[string]struct{}, error) {
+	hashMapDiets := make(map[string]struct{})
+	var currentRow []string
+
+	for _, item := range items {
+		err := json.Unmarshal(item, &currentRow)
+
+		if err != nil {
+			return nil, err
+		}
+
+		for idx := range currentRow {
+			hashMapDiets[currentRow[idx]] = struct{}{}
+		}
+	}
+
+	return hashMapDiets, nil
 }

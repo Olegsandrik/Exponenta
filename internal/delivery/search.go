@@ -14,6 +14,7 @@ import (
 type SearchUsecase interface {
 	Search(ctx context.Context, query string) (dto.SearchResponseDto, error)
 	Suggest(ctx context.Context, query string) (dto.SuggestResponseDto, error)
+	GetFilter(ctx context.Context) (dto.FiltersDto, error)
 }
 
 type SearchHandler struct {
@@ -33,6 +34,7 @@ func (h *SearchHandler) InitRouter(r *mux.Router) {
 	{
 		h.router.HandleFunc("", h.Search).Methods("GET")
 		h.router.HandleFunc("/suggest", h.Suggest).Methods("GET")
+		h.router.HandleFunc("/filters", h.GetAllFilters).Methods("GET")
 	}
 }
 
@@ -52,21 +54,20 @@ func (h *SearchHandler) Search(w http.ResponseWriter, r *http.Request) {
 	searchResponse, err := h.usecase.Search(ctx, query)
 
 	if err != nil {
-		if errors.Is(err, utils.NoFoundErr) {
+		if errors.Is(err, utils.ErrNoFound) {
 			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 				Status: http.StatusNotFound,
 				Msg:    "results not found",
 				MsgRus: "по запросу ничего не найдено",
 			})
 			return
-		} else {
-			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
-				Status: http.StatusInternalServerError,
-				Msg:    err.Error(),
-				MsgRus: "не получилось произвести поиск",
-			})
-			return
 		}
+		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+			Status: http.StatusInternalServerError,
+			Msg:    err.Error(),
+			MsgRus: "не получилось произвести поиск",
+		})
+		return
 	}
 
 	utils.JSONResponse(ctx, w, 200, utils.SuccessResponse{
@@ -101,5 +102,25 @@ func (h *SearchHandler) Suggest(w http.ResponseWriter, r *http.Request) {
 	utils.JSONResponse(ctx, w, 200, utils.SuccessResponse{
 		Status: http.StatusOK,
 		Data:   suggestResponse,
+	})
+}
+
+func (h *SearchHandler) GetAllFilters(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	filtersData, err := h.usecase.GetFilter(ctx)
+
+	if err != nil {
+		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+			Status: http.StatusInternalServerError,
+			Msg:    err.Error(),
+			MsgRus: "не получилось получить фильтры",
+		})
+		return
+	}
+
+	utils.JSONResponse(ctx, w, 200, utils.SuccessResponse{
+		Status: http.StatusOK,
+		Data:   filtersData,
 	})
 }

@@ -4,22 +4,25 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/Olegsandrik/Exponenta/utils"
 	"strings"
 
 	"github.com/Olegsandrik/Exponenta/internal/adapters/elasticsearch"
+	"github.com/Olegsandrik/Exponenta/internal/adapters/postgres"
 	"github.com/Olegsandrik/Exponenta/internal/repository/dao"
 	"github.com/Olegsandrik/Exponenta/internal/usecase/models"
 	"github.com/Olegsandrik/Exponenta/logger"
+	"github.com/Olegsandrik/Exponenta/utils"
 )
 
 type SearchRepository struct {
-	Adapter *elasticsearch.Adapter
+	AdapterElastic  *elasticsearch.Adapter
+	AdapterPostgres *postgres.Adapter
 }
 
-func NewSearchRepository(adapter *elasticsearch.Adapter) *SearchRepository {
+func NewSearchRepository(adapter *elasticsearch.Adapter, adapterPostgres *postgres.Adapter) *SearchRepository {
 	return &SearchRepository{
-		Adapter: adapter,
+		AdapterElastic:  adapter,
+		AdapterPostgres: adapterPostgres,
 	}
 }
 
@@ -58,17 +61,17 @@ func (repo *SearchRepository) Search(ctx context.Context, query string) (models.
     }
 	}`
 
-	res, err := repo.Adapter.ElasticClient.Search(
-		repo.Adapter.ElasticClient.Search.WithContext(ctx),
-		repo.Adapter.ElasticClient.Search.WithIndex(elasticsearch.RecipeIndex),
-		repo.Adapter.ElasticClient.Search.WithBody(strings.NewReader(fmt.Sprintf(q, query, query, query))),
+	res, err := repo.AdapterElastic.ElasticClient.Search(
+		repo.AdapterElastic.ElasticClient.Search.WithContext(ctx),
+		repo.AdapterElastic.ElasticClient.Search.WithIndex(elasticsearch.RecipeIndex),
+		repo.AdapterElastic.ElasticClient.Search.WithBody(strings.NewReader(fmt.Sprintf(q, query, query, query))),
 	)
 
 	defer res.Body.Close()
 
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf("search err: %e with query: %s", err, query))
-		return models.SearchResponseModel{}, utils.FailToSearchErr
+		return models.SearchResponseModel{}, utils.ErrFailToSearch
 	}
 
 	var response dao.ResponseElasticRecipeIndex
@@ -77,12 +80,12 @@ func (repo *SearchRepository) Search(ctx context.Context, query string) (models.
 
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf("response decode error: %e with query: %s", err, query))
-		return models.SearchResponseModel{}, utils.FailToSearchErr
+		return models.SearchResponseModel{}, utils.ErrFailToSearch
 	}
 
 	if len(response.Hits.Hits) == 0 {
 		logger.Error(ctx, fmt.Sprintf("no results found with query: %s", query))
-		return models.SearchResponseModel{}, utils.NoFoundErr
+		return models.SearchResponseModel{}, utils.ErrNoFound
 	}
 
 	result := dao.ConvertResponseElasticRecipeIndexToModel(response)
@@ -107,28 +110,26 @@ func (repo *SearchRepository) Suggest(ctx context.Context, query string) (models
 	  "size":5
 	}`
 
-	res, err := repo.Adapter.ElasticClient.Search(
-		repo.Adapter.ElasticClient.Search.WithContext(ctx),
-		repo.Adapter.ElasticClient.Search.WithIndex(elasticsearch.SuggestIndex),
-		repo.Adapter.ElasticClient.Search.WithBody(strings.NewReader(fmt.Sprintf(q, query))),
+	res, err := repo.AdapterElastic.ElasticClient.Search(
+		repo.AdapterElastic.ElasticClient.Search.WithContext(ctx),
+		repo.AdapterElastic.ElasticClient.Search.WithIndex(elasticsearch.SuggestIndex),
+		repo.AdapterElastic.ElasticClient.Search.WithBody(strings.NewReader(fmt.Sprintf(q, query))),
 	)
 
 	defer res.Body.Close()
 
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf("suggest err: %e with query: %s", err, query))
-		return models.SuggestResponseModel{}, utils.FailToGetSuggestErr
+		return models.SuggestResponseModel{}, utils.ErrFailToGetSuggest
 	}
 
 	var response dao.ResponseElasticSuggestIndex
-
-	logger.Info(ctx, fmt.Sprintf("%s", res.String()))
 
 	err = json.NewDecoder(res.Body).Decode(&response)
 
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf("suggest decode error: %e with query: %s", err, query))
-		return models.SuggestResponseModel{}, utils.FailToGetSuggestErr
+		return models.SuggestResponseModel{}, utils.ErrFailToGetSuggest
 	}
 
 	if len(response.Hits.Hits) == 0 {
@@ -140,4 +141,71 @@ func (repo *SearchRepository) Suggest(ctx context.Context, query string) (models
 
 	logger.Info(ctx, fmt.Sprintf("success query: %s", query))
 	return result, nil
+}
+
+func (repo *SearchRepository) GetDiets(ctx context.Context) ([]string, error) {
+	return repo.getFilter(ctx, "diets")
+}
+
+func (repo *SearchRepository) GetDishTypes(ctx context.Context) ([]string, error) {
+	return repo.getFilter(ctx, "dish_types")
+}
+
+func (repo *SearchRepository) getFilter(ctx context.Context, filter string) ([]string, error) {
+	var items []json.RawMessage
+
+	q := "SELECT %s FROM recipes"
+
+	err := repo.AdapterPostgres.Select(ctx, &items, fmt.Sprintf(q, filter))
+
+	if err != nil {
+		logger.Error(ctx, fmt.Sprintf("query err: %e with query: %s", err, q))
+		return nil, fmt.Errorf("err: %e with filter: %s", utils.ErrToGetFilterValues, filter)
+	}
+
+	if len(items) == 0 {
+		logger.Error(ctx, fmt.Sprintf("no results found with query: %s", q))
+		return nil, fmt.Errorf("err: %e with filter: %s", utils.ErrToGetFilterValues, filter)
+	}
+
+	hashMap, err := dao.MakeSet(items)
+
+	if err != nil {
+		logger.Error(ctx, fmt.Sprintf("query err: %e with query: %s", err, q))
+		return nil, fmt.Errorf("err: %e with filter: %s", utils.ErrToGetFilterValues, filter)
+	}
+
+	result := make([]string, 0, len(hashMap))
+
+	for diet := range hashMap {
+		result = append(result, diet)
+	}
+
+	logger.Info(ctx, fmt.Sprintf("success query: %s", q))
+
+	return result, nil
+}
+
+func (repo *SearchRepository) GetMaxMinCookingTime(ctx context.Context) (models.TimeModel, error) {
+	q := "SELECT Min(ready_in_minutes), Max(ready_in_minutes) FROM public.recipes"
+
+	time := make([]dao.TimeDao, 0, 1)
+
+	err := repo.AdapterPostgres.Select(ctx, &time, q)
+
+	if err != nil {
+		logger.Error(ctx, fmt.Sprintf("query err: %e with query: %s", err, q))
+		return models.TimeModel{}, utils.ErrGetMaxMinCookingTime
+	}
+
+	if len(time) == 0 {
+		logger.Error(ctx, fmt.Sprintf("no row with query: %s", q))
+		return models.TimeModel{}, utils.ErrGetMaxMinCookingTime
+	}
+
+	timeModel := dao.ConvertTimeDaoToModel(time[0])
+
+	logger.Info(ctx, fmt.Sprintf("success query: %s", q))
+
+	return timeModel, nil
 }

@@ -102,7 +102,7 @@ func InitApp() *App {
 
 	// Search
 
-	searchRepo := repository.NewSearchRepository(elasticsearchAdapter)
+	searchRepo := repository.NewSearchRepository(elasticsearchAdapter, postgresAdapter)
 	searchUsecase := usecase.NewSearchUsecase(searchRepo)
 	searchHandler := delivery.NewSearchHandler(searchUsecase)
 	searchHandler.InitRouter(apiRouter)
