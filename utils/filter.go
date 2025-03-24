@@ -14,13 +14,13 @@ func FilterForElasticsearchRecipeIndex(maxTime int, dishType string, diet string
 	dishTypeFilter := zeroFilter
 
 	if dishType != "" {
-		dishTypeFilter = fmt.Sprintf(` { "match": { "dishTypes": "%s" } }`, dishType)
+		dishTypeFilter = fmt.Sprintf(` { "match_phrase": { "dishTypes": "%s" } }`, dishType)
 	}
 
 	dietFilter := zeroFilter
 
 	if diet != "" {
-		dietFilter = fmt.Sprintf(`{ "match": { "diets": "%s" } }`, diet)
+		dietFilter = fmt.Sprintf(`{ "match_phrase": { "diets": "%s" } }`, diet)
 	}
 
 	return maxTimeFilter, dishTypeFilter, dietFilter
