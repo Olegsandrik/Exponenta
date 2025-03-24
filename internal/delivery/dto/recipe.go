@@ -1,6 +1,9 @@
 package dto
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"net/http"
+)
 
 type RecipeDto struct {
 	ID          int             `json:"id,omitempty"`
@@ -31,4 +34,33 @@ type TimerRecipeDto struct {
 	Length  json.RawMessage `json:"time,omitempty"`
 	Step    string          `json:"description,omitempty"`
 	StepNum int             `json:"stepNum,omitempty"`
+}
+
+type TimerRecipeDataDto struct {
+	Time    int `json:"time"`
+	StepNum int `json:"step"`
+}
+
+func GetCookingRecipeData(r *http.Request) (RecipeDto, error) {
+	var recipe RecipeDto
+
+	err := json.NewDecoder(r.Body).Decode(&recipe)
+
+	if err != nil {
+		return RecipeDto{}, err
+	}
+
+	return recipe, nil
+}
+
+func GetTimerRecipeData(r *http.Request) (TimerRecipeDataDto, error) {
+	var timer TimerRecipeDataDto
+
+	err := json.NewDecoder(r.Body).Decode(&timer)
+
+	if err != nil {
+		return TimerRecipeDataDto{}, err
+	}
+
+	return timer, nil
 }

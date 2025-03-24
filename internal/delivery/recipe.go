@@ -147,27 +147,28 @@ func (h *CookingRecipeHandler) GetCurrentRecipe(w http.ResponseWriter, r *http.R
 
 func (h *CookingRecipeHandler) StartCookingRecipe(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	idStr := r.FormValue("id")
-	if idStr == "" {
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
-			Status: http.StatusBadRequest,
-			Msg:    "id not found",
-			MsgRus: "id не найден",
-		})
-		return
-	}
 
-	id, err := strconv.Atoi(idStr)
+	recipeData, err := dto.GetCookingRecipeData(r)
+
 	if err != nil {
 		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 			Status: http.StatusBadRequest,
-			Msg:    err.Error(),
-			MsgRus: "id должен быть целым числом",
+			Msg:    "invalid recipe id",
+			MsgRus: "некорректный recipe id",
 		})
 		return
 	}
 
-	currentRecipe, err := h.usecase.StartCookingRecipe(ctx, id)
+	if recipeData.ID == 0 {
+		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+			Status: http.StatusBadRequest,
+			Msg:    "not found recipe id",
+			MsgRus: "не найден recipe id",
+		})
+		return
+	}
+
+	currentRecipe, err := h.usecase.StartCookingRecipe(ctx, recipeData.ID)
 
 	if err != nil {
 		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
@@ -263,8 +264,18 @@ func (h *CookingRecipeHandler) GetAllTimersCookingRecipe(w http.ResponseWriter, 
 func (h *CookingRecipeHandler) AddTimerCookingRecipe(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	stepNumStr := r.FormValue("step")
-	if stepNumStr == "" {
+	TimerData, err := dto.GetTimerRecipeData(r)
+
+	if err != nil {
+		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+			Status: http.StatusBadRequest,
+			Msg:    "invalid timer data",
+			MsgRus: "некорректны данные таймера",
+		})
+		return
+	}
+
+	if TimerData.StepNum == 0 {
 		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 			Status: http.StatusBadRequest,
 			Msg:    "step not found",
@@ -273,37 +284,16 @@ func (h *CookingRecipeHandler) AddTimerCookingRecipe(w http.ResponseWriter, r *h
 		return
 	}
 
-	stepNum, err := strconv.Atoi(stepNumStr)
-	if err != nil {
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
-			Status: http.StatusBadRequest,
-			Msg:    "step must be int",
-			MsgRus: "шаг должен быть целым числом",
-		})
-		return
-	}
-
-	timeSecStr := r.FormValue("time")
-	if timeSecStr == "" {
+	if TimerData.Time == 0 {
 		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 			Status: http.StatusBadRequest,
 			Msg:    "time not found",
-			MsgRus: "время не найдено",
+			MsgRus: "time не найден",
 		})
 		return
 	}
 
-	timeSec, err := strconv.Atoi(timeSecStr)
-	if err != nil {
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
-			Status: http.StatusBadRequest,
-			Msg:    "time must be int",
-			MsgRus: "время должно быть целым числом",
-		})
-		return
-	}
-
-	err = h.usecase.AddTimerRecipe(ctx, stepNum, timeSec)
+	err = h.usecase.AddTimerRecipe(ctx, TimerData.StepNum, TimerData.Time)
 
 	if err != nil {
 		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
@@ -323,27 +313,28 @@ func (h *CookingRecipeHandler) AddTimerCookingRecipe(w http.ResponseWriter, r *h
 func (h *CookingRecipeHandler) FinishTimerCookingRecipe(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	stepNumStr := r.FormValue("step")
-	if stepNumStr == "" {
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
-			Status: http.StatusBadRequest,
-			Msg:    "step not found",
-			MsgRus: "шаг не найден",
-		})
-		return
-	}
+	TimerData, err := dto.GetTimerRecipeData(r)
 
-	stepNum, err := strconv.Atoi(stepNumStr)
 	if err != nil {
 		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 			Status: http.StatusBadRequest,
-			Msg:    "step must be int",
-			MsgRus: "шаг должен быть целым числом",
+			Msg:    "invalid timer data",
+			MsgRus: "некорректны данные таймера",
 		})
 		return
 	}
 
-	err = h.usecase.DeleteTimerRecipe(ctx, stepNum)
+	if TimerData.StepNum == 0 {
+		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+			Status: http.StatusBadRequest,
+			Msg:    "step not found",
+			MsgRus: "step не найден",
+		})
+		return
+	}
+
+	err = h.usecase.DeleteTimerRecipe(ctx, TimerData.StepNum)
+
 	if err != nil {
 		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 			Status: http.StatusInternalServerError,
