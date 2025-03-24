@@ -51,10 +51,13 @@ func ConvertResponseElasticRecipeIndexToModel(resp ResponseElasticRecipeIndex) [
 
 	for _, item := range resp.Hits.Hits {
 		result = append(result, models.RecipeModel{
-			ID:   item.Source.ID,
-			Name: item.Source.Name,
-			Img:  item.Source.Img,
-			Desc: item.Source.Desc,
+			ID:          item.Source.ID,
+			Name:        item.Source.Name,
+			Img:         item.Source.Img,
+			Desc:        item.Source.Desc,
+			CookingTime: item.Source.CookingTime,
+			DishTypes:   string(item.Source.DishTypes),
+			Diets:       string(item.Source.Diets),
 		})
 	}
 
@@ -72,7 +75,7 @@ func ConvertResponseElasticSuggestIndexToModel(resp ResponseElasticSuggestIndex)
 }
 
 func MakeSet(items []json.RawMessage) (map[string]struct{}, error) {
-	hashMapDiets := make(map[string]struct{})
+	hashMap := make(map[string]struct{})
 	var currentRow []string
 
 	for _, item := range items {
@@ -83,9 +86,9 @@ func MakeSet(items []json.RawMessage) (map[string]struct{}, error) {
 		}
 
 		for idx := range currentRow {
-			hashMapDiets[currentRow[idx]] = struct{}{}
+			hashMap[currentRow[idx]] = struct{}{}
 		}
 	}
 
-	return hashMapDiets, nil
+	return hashMap, nil
 }

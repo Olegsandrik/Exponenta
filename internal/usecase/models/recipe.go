@@ -13,7 +13,10 @@ type RecipeModel struct {
 	Img         string
 	CookingTime int
 	ServingsNum int
+	DishTypes   string
+	Diets       string
 	Ingredients string
+	HealthScore int
 	Steps       string
 }
 
@@ -112,6 +115,9 @@ func ConvertRecipeToDto(rm []RecipeModel) []dto.RecipeDto {
 			CookingTime: r.CookingTime,
 			ServingsNum: r.ServingsNum,
 			Steps:       json.RawMessage(r.Steps),
+			Diets:       json.RawMessage(r.Diets),
+			DishTypes:   json.RawMessage(r.DishTypes),
+			HealthScore: r.HealthScore,
 		})
 	}
 	return RecipeItems

@@ -37,7 +37,26 @@ const (
                 "id": {
                      "type": integer,
                      "index": false
-                }
+                },
+				"cookingTime": {
+                     "type": "integer",
+				},
+				"dishTypes": {
+					"type": "text",
+                    "fields": {
+					  "keyword": {
+						"type": "keyword"
+					  }
+					}
+				},
+				"diets": {
+					"type": "text",
+                    "fields": {
+					  "keyword": {
+						"type": "keyword"
+					  }
+					}
+				},
 			}
 		}
 	}`
@@ -108,7 +127,7 @@ func initRecipeIndex(ctx context.Context, elasticSearchAdapter *Adapter,
 	}
 
 	return insertDataInIndex(ctx, elasticSearchAdapter, postgresAdapter,
-		"SELECT id, description, name, image FROM public.recipes", RecipeIndex)
+		"SELECT id, description, name, image, ready_in_minutes, dish_types, diets FROM public.recipes", RecipeIndex)
 }
 
 func initSuggestIndex(ctx context.Context, elasticSearchAdapter *Adapter,

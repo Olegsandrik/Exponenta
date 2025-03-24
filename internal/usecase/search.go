@@ -9,7 +9,8 @@ import (
 )
 
 type SearchRepo interface {
-	Search(ctx context.Context, query string) (models.SearchResponseModel, error)
+	Search(ctx context.Context, query string, diet string, dishType string,
+		maxTime int) (models.SearchResponseModel, error)
 	Suggest(ctx context.Context, query string) (models.SuggestResponseModel, error)
 	GetDishTypes(ctx context.Context) ([]string, error)
 	GetDiets(ctx context.Context) ([]string, error)
@@ -24,8 +25,9 @@ func NewSearchUsecase(searchRepo SearchRepo) *SearchUsecase {
 	return &SearchUsecase{searchRepo: searchRepo}
 }
 
-func (s *SearchUsecase) Search(ctx context.Context, query string) (dto.SearchResponseDto, error) {
-	searchResultModel, err := s.searchRepo.Search(ctx, query)
+func (s *SearchUsecase) Search(
+	ctx context.Context, query string, diet string, dishType string, maxTime int) (dto.SearchResponseDto, error) {
+	searchResultModel, err := s.searchRepo.Search(ctx, query, diet, dishType, maxTime)
 
 	if searchResultModel.Recipes != nil {
 		utils.SanitizeRecipeDescription(searchResultModel.Recipes)

@@ -14,6 +14,9 @@ type RecipeDto struct {
 	ServingsNum int             `json:"servingsNum,omitempty"`
 	Ingredients json.RawMessage `json:"ingredients,omitempty"`
 	Steps       json.RawMessage `json:"steps,omitempty"`
+	DishTypes   json.RawMessage `json:"dishTypes,omitempty"`
+	Diets       json.RawMessage `json:"diets,omitempty"`
+	HealthScore int             `json:"healthScore,omitempty"`
 }
 
 type CurrentRecipeDto struct {

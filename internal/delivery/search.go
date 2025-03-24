@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/Olegsandrik/Exponenta/internal/delivery/dto"
 	"github.com/Olegsandrik/Exponenta/utils"
@@ -12,7 +13,7 @@ import (
 )
 
 type SearchUsecase interface {
-	Search(ctx context.Context, query string) (dto.SearchResponseDto, error)
+	Search(ctx context.Context, query string, diet string, dishType string, maxTime int) (dto.SearchResponseDto, error)
 	Suggest(ctx context.Context, query string) (dto.SuggestResponseDto, error)
 	GetFilter(ctx context.Context) (dto.FiltersDto, error)
 }
@@ -41,6 +42,9 @@ func (h *SearchHandler) InitRouter(r *mux.Router) {
 func (h *SearchHandler) Search(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	query := r.URL.Query().Get("query")
+	diet := r.URL.Query().Get("diet")
+	dishType := r.URL.Query().Get("dishType")
+	maxTimeStr := r.URL.Query().Get("maxTime")
 
 	if query == "" {
 		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
@@ -51,7 +55,18 @@ func (h *SearchHandler) Search(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	searchResponse, err := h.usecase.Search(ctx, query)
+	maxTime, err := strconv.Atoi(maxTimeStr)
+
+	if err != nil && maxTimeStr != "" {
+		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+			Status: http.StatusBadRequest,
+			Msg:    "max time must be a int",
+			MsgRus: "максимальное время должно быть целым числом",
+		})
+		return
+	}
+
+	searchResponse, err := h.usecase.Search(ctx, query, diet, dishType, maxTime)
 
 	if err != nil {
 		if errors.Is(err, utils.ErrNoFound) {

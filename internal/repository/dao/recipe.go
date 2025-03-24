@@ -11,13 +11,16 @@ import (
 )
 
 type RecipeTable struct {
-	ID          int    `db:"id" json:"id,omitempty"`
-	Name        string `db:"name" json:"name,omitempty"`
-	Desc        string `db:"description" json:"description,omitempty"`
-	Img         string `db:"image" json:"image,omitempty"`
-	CookingTime int    `db:"ready_in_minutes" json:"cookingTime,omitempty"`
-	ServingsNum int    `db:"servings" json:"servingsNum,omitempty"`
-	Steps       string `db:"steps" json:"steps,omitempty"`
+	ID          int             `db:"id" json:"id,omitempty"`
+	Name        string          `db:"name" json:"name,omitempty"`
+	Desc        string          `db:"description" json:"description,omitempty"`
+	Img         string          `db:"image" json:"image,omitempty"`
+	CookingTime int             `db:"ready_in_minutes" json:"cookingTime,omitempty"`
+	ServingsNum int             `db:"servings" json:"servingsNum,omitempty"`
+	Steps       string          `db:"steps" json:"steps,omitempty"`
+	DishTypes   json.RawMessage `db:"dish_types" json:"dishTypes,omitempty"`
+	Diets       json.RawMessage `db:"diets" json:"diets,omitempty"`
+	HealthScore int             `db:"healthscore" json:"healthscore,omitempty"`
 }
 
 type CurrentRecipeTable struct {
@@ -137,8 +140,10 @@ func ConvertDaoToRecipe(rt []RecipeTable) []models.RecipeModel {
 			Img:         r.Img,
 			CookingTime: r.CookingTime,
 			ServingsNum: r.ServingsNum,
-			// Ingredients: r.Ingredients,
-			Steps: r.Steps,
+			Steps:       r.Steps,
+			HealthScore: r.HealthScore,
+			Diets:       string(r.Diets),
+			DishTypes:   string(r.DishTypes),
 		})
 	}
 	return RecipeItems

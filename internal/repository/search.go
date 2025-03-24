@@ -26,45 +26,67 @@ func NewSearchRepository(adapter *elasticsearch.Adapter, adapterPostgres *postgr
 	}
 }
 
-func (repo *SearchRepository) Search(ctx context.Context, query string) (models.SearchResponseModel, error) {
-	q := `{
-    "query": {
-        "bool": {
-            "should": [
-                {
-                    "multi_match": {
-                        "query": "%s",
-                        "fields": ["name^5", "description^3"],
-                        "type": "best_fields",
-                        "operator": "or",
-                        "fuzziness": 2
-                    }
-                },
-                {
-                    "match_phrase": {
-                        "name": {
-                            "query": "%s",
-                            "boost": 5
-                        }
-                    }
-                },
-                {
-                    "match_phrase": {
-                        "description": {
-                            "query": "%s",
-                            "boost": 5
-                        }
-                    }
-                }
-            ]
-        }
-    }
+func (repo *SearchRepository) Search(ctx context.Context, query string, diet string, dishType string,
+	maxTime int) (models.SearchResponseModel, error) {
+	q := ` 
+    {
+		"query": {
+			"bool": {
+				"must": [
+					{
+						"bool": {
+							"should": [
+								{
+									"multi_match": {
+										"query": "%s",
+										"fields": ["name^5", "description^3"],
+										"type": "best_fields",
+										"operator": "or"
+									}
+								},
+								{
+									"match_phrase": {
+										"name": {
+											"query": "%s",
+											"boost": 5
+										}
+									}
+								},
+								{
+									"match_phrase": {
+										"description": {
+											"query": "%s",
+											"boost": 5
+										}
+									}
+								}
+							],
+							"minimum_should_match": 1
+						}
+					}
+				],
+				"filter": [
+					%s,
+					%s,
+					%s
+				]
+			}
+		}
 	}`
+
+	maxTimeFilter, dishTypeFilter, dietFilter := utils.FilterForElasticsearchRecipeIndex(maxTime, dishType, diet)
 
 	res, err := repo.AdapterElastic.ElasticClient.Search(
 		repo.AdapterElastic.ElasticClient.Search.WithContext(ctx),
 		repo.AdapterElastic.ElasticClient.Search.WithIndex(elasticsearch.RecipeIndex),
-		repo.AdapterElastic.ElasticClient.Search.WithBody(strings.NewReader(fmt.Sprintf(q, query, query, query))),
+		repo.AdapterElastic.ElasticClient.Search.WithBody(strings.NewReader(fmt.Sprintf(
+			q,
+			query,
+			query,
+			query,
+			maxTimeFilter,
+			dishTypeFilter,
+			dietFilter))),
 	)
 
 	defer res.Body.Close()
