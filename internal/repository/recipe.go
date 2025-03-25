@@ -510,7 +510,7 @@ func (repo *CookingRecipeRepo) DeleteTimerFromRecipe(ctx context.Context, uID ui
 }
 
 func (repo *CookingRecipeRepo) GetTimersRecipe(ctx context.Context, uID uint) ([]models.TimerRecipeModel, error) {
-	q := "SELECT description, end_time FROM public.timers WHERE user_id=$1"
+	q := "SELECT description, end_time, step_num FROM public.timers WHERE user_id=$1"
 
 	var timers []dao.TimerTable
 
