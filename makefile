@@ -8,7 +8,7 @@ run-prod:
 
 
 stop-prod:
-	docker-compose -f Docker-compose.yml down
+	docker-compose -f Docker-compose.yml down -d postgres elasticsearch myAPI
 
 linter:
 	golangci-lint run --config=golangci.yaml
