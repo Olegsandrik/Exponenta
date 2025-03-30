@@ -22,6 +22,7 @@ type RecipeDto struct {
 type CurrentRecipeDto struct {
 	ID          int                  `json:"id,omitempty"`
 	Name        string               `json:"name,omitempty"`
+	TotalSteps  int                  `json:"totalSteps,omitempty"`
 	CurrentStep CurrentStepRecipeDto `json:"currentStep,omitempty"`
 }
 

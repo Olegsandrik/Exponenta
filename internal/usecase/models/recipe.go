@@ -23,6 +23,7 @@ type RecipeModel struct {
 type CurrentRecipeModel struct {
 	ID          int
 	Name        string
+	TotalSteps  int
 	CurrentStep CurrentStepRecipeModel
 }
 
@@ -56,6 +57,7 @@ func ConvertCurrentRecipeToDTO(recipe CurrentRecipeModel) dto.CurrentRecipeDto {
 	return dto.CurrentRecipeDto{
 		ID:          recipe.ID,
 		Name:        recipe.Name,
+		TotalSteps:  recipe.TotalSteps,
 		CurrentStep: ConvertCurrentStepToDTO(recipe.CurrentStep),
 	}
 }

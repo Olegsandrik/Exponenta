@@ -122,7 +122,7 @@ func (repo *CookingRecipeRepo) StartCooking(ctx context.Context, uID uint, recip
 		return err
 	}
 
-	if err = repo.insertCurrentRecipe(ctx, tx, uID, recipeID, recipe.Name); err != nil {
+	if err = repo.insertCurrentRecipe(ctx, tx, uID, recipeID, recipe.Name, recipe.TotalSteps); err != nil {
 		return err
 	}
 
@@ -144,7 +144,7 @@ func (repo *CookingRecipeRepo) StartCooking(ctx context.Context, uID uint, recip
 }
 
 func (repo *CookingRecipeRepo) getRecipe(ctx context.Context, tx *sqlx.Tx, recipeID int) (*dao.RecipeTable, error) {
-	q := `SELECT r.name, r.steps FROM public.recipes as r WHERE id = $1`
+	q := `SELECT r.name, r.steps, r.total_steps FROM public.recipes as r WHERE id = $1`
 
 	recipeRows := make([]dao.RecipeTable, 0, 1)
 
@@ -162,10 +162,10 @@ func (repo *CookingRecipeRepo) getRecipe(ctx context.Context, tx *sqlx.Tx, recip
 }
 
 func (repo *CookingRecipeRepo) insertCurrentRecipe(
-	ctx context.Context, tx *sqlx.Tx, uID uint, recipeID int, name string) error {
-	q := "INSERT INTO public.current_recipe (user_id, recipe_id, name) VALUES ($1, $2, $3)"
+	ctx context.Context, tx *sqlx.Tx, uID uint, recipeID int, name string, totalSteps int) error {
+	q := "INSERT INTO public.current_recipe (user_id, recipe_id, name, total_steps) VALUES ($1, $2, $3, $4)"
 
-	result, err := tx.ExecContext(ctx, q, uID, recipeID, name)
+	result, err := tx.ExecContext(ctx, q, uID, recipeID, name, totalSteps)
 
 	if err != nil {
 		logger.Error(ctx,
@@ -253,7 +253,7 @@ func (repo *CookingRecipeRepo) insertRecipeSteps(
 }
 
 func (repo *CookingRecipeRepo) GetCurrentRecipe(ctx context.Context, uID uint) (models.CurrentRecipeModel, error) {
-	q := "SELECT cr.recipe_id, cr.name, cs.step_num, cs.step, cs.ingredients, cs.equipment, cs.length " +
+	q := "SELECT cr.recipe_id, cr.name, cr.total_steps, cs.step_num, cs.step, cs.ingredients, cs.equipment, cs.length " +
 		"FROM public.current_recipe as cr " +
 		"LEFT JOIN public.current_recipe_step as cs ON cs.user_id = cr.user_id AND cr.current_step_num=cs.step_num " +
 		"WHERE cr.user_id = $1"

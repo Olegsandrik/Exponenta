@@ -21,6 +21,7 @@ type RecipeTable struct {
 	DishTypes   json.RawMessage `db:"dish_types" json:"dishTypes,omitempty"`
 	Diets       json.RawMessage `db:"diets" json:"diets,omitempty"`
 	HealthScore int             `db:"healthscore" json:"healthscore,omitempty"`
+	TotalSteps  int             `db:"total_steps" json:"totalSteps,omitempty"`
 }
 
 type CurrentRecipeTable struct {
@@ -28,6 +29,7 @@ type CurrentRecipeTable struct {
 	Name        string          `db:"name"`
 	NumStep     int             `db:"step_num"`
 	Step        string          `db:"step"`
+	TotalSteps  int             `db:"total_steps"`
 	Ingredients json.RawMessage `db:"ingredients"`
 	Equipment   json.RawMessage `db:"equipment"`
 	Length      json.RawMessage `db:"length"`
@@ -82,8 +84,9 @@ func ConvertTimerToDAO(tt []TimerTable) ([]models.TimerRecipeModel, error) {
 
 func ConvertDaoToCurrentRecipe(cr CurrentRecipeTable) models.CurrentRecipeModel {
 	return models.CurrentRecipeModel{
-		ID:   cr.ID,
-		Name: cr.Name,
+		ID:         cr.ID,
+		Name:       cr.Name,
+		TotalSteps: cr.TotalSteps,
 		CurrentStep: models.CurrentStepRecipeModel{
 			NumStep:     cr.NumStep,
 			Step:        cr.Step,
