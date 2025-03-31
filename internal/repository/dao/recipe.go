@@ -55,7 +55,7 @@ type LengthTimer struct {
 }
 
 type IngredientTable struct {
-	IngredientID int     `db:"ingredient_id" json:"ingredientId"`
+	IngredientID int     `db:"ingredient_id" json:"id"`
 	Name         string  `db:"name" json:"name"`
 	Image        string  `db:"image" json:"image"`
 	Amount       float64 `db:"amount" json:"amount"`
