@@ -13,7 +13,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 64m
+          memory: 256m
 
   elasticsearch:
     image: bitnami/elasticsearch:7.17.20-debian-12-r2
@@ -60,7 +60,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 64m
+          memory: 256m
 
 volumes:
   postgres_data:
