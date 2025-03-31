@@ -54,6 +54,14 @@ type LengthTimer struct {
 	Unit   string `json:"unit"`
 }
 
+type IngredientTable struct {
+	IngredientID int     `db:"ingredient_id" json:"ingredientId"`
+	Name         string  `db:"name" json:"name"`
+	Image        string  `db:"image" json:"image"`
+	Amount       float64 `db:"amount" json:"amount"`
+	Unit         string  `db:"unit" json:"unit"`
+}
+
 func ConvertTimerToDAO(tt []TimerTable) ([]models.TimerRecipeModel, error) {
 	timers := make([]models.TimerRecipeModel, len(tt))
 	for i, timer := range tt {

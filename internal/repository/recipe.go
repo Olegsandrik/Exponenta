@@ -25,7 +25,7 @@ func NewCookingRecipeRepo(storage *DB.Adapter) *CookingRecipeRepo {
 }
 
 func (repo *CookingRecipeRepo) GetAllRecipe(ctx context.Context, num int) ([]models.RecipeModel, error) {
-	q := `SELECT id, name, description, image, healthscore, dish_types, diets, servings FROM public.recipes LIMIT $1`
+	q := `SELECT id, name, description, image FROM public.recipes LIMIT $1`
 
 	recipeRows := make([]dao.RecipeTable, 0, num)
 
@@ -49,11 +49,72 @@ func (repo *CookingRecipeRepo) GetAllRecipe(ctx context.Context, num int) ([]mod
 }
 
 func (repo *CookingRecipeRepo) GetRecipeByID(ctx context.Context, id int) ([]models.RecipeModel, error) {
-	q := `SELECT r.name, r.description, r.image, r.steps FROM public.recipes as r WHERE id = $1`
+	tx, err := repo.storage.BeginTx(ctx, nil)
+	if err != nil {
+		logger.Error(ctx,
+			fmt.Sprintf("failed to begin transaction on getting recipe: %d, err: %e", id, err),
+		)
+		return nil, utils.ErrFailToGetRecipeByID
+	}
+
+	defer func() {
+		if err != nil {
+			if err = tx.Rollback(); err != nil {
+				logger.Error(ctx, fmt.Sprintf(
+					"failed to rollback transaction on getting recipe: %d, err: %e",
+					id,
+					err))
+			}
+		}
+	}()
+
+	recipe, err := repo.getRecipeByID(ctx, tx, id)
+
+	if err != nil {
+		logger.Error(ctx, fmt.Sprintf("failed to get recipe: %d, err: %e", id, err))
+		return nil, err
+	}
+
+	ingredientsRows, err := repo.getIngredientsRecipeByID(ctx, tx, id)
+
+	if err != nil {
+		logger.Error(ctx, fmt.Sprintf("failed to get ingredients recipe: %d, err: %e", id, err))
+		return nil, err
+	}
+
+	recipe[0].Ingredients = ingredientsRows
+
+	return recipe, nil
+}
+
+func (repo *CookingRecipeRepo) getIngredientsRecipeByID(ctx context.Context, tx *sqlx.Tx, id int) ([]byte, error) {
+	q := `SELECT ri.ingredient_id, i.name, i.image, ri.amount, ri.unit FROM public.recipe_ingredients AS ri
+		  LEFT JOIN public.ingredients as i ON ri.ingredient_id = i.id
+		  WHERE ri.recipe_id = $1`
+
+	var ingredientRows []dao.IngredientTable
+
+	err := tx.SelectContext(ctx, &ingredientRows, q, id)
+	if err != nil {
+		logger.Error(ctx, fmt.Sprintf("error getting ingredients rows: %s with id: %d", err.Error(), id))
+		return nil, utils.ErrFailToGetIngredientsRecipeByID
+	}
+
+	if len(ingredientRows) == 0 {
+		logger.Error(ctx, fmt.Sprintf("error getting ingredients rows: no rows with id: %d", id))
+		return nil, utils.ErrFailToGetIngredientsRecipeByID
+	}
+
+	return json.Marshal(ingredientRows)
+}
+
+func (repo *CookingRecipeRepo) getRecipeByID(ctx context.Context, tx *sqlx.Tx, id int) ([]models.RecipeModel, error) {
+	q := `SELECT r.name, r.description, r.image, r.steps, r.healthscore, r.dish_types, r.diets, r.servings 
+			FROM public.recipes as r WHERE id = $1`
 
 	recipeRows := make([]dao.RecipeTable, 0, 1)
 
-	err := repo.storage.Select(ctx, &recipeRows, q, id)
+	err := tx.SelectContext(ctx, &recipeRows, q, id)
 
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf("error getting recipe row: %s with id: %d", err.Error(), id))
@@ -103,7 +164,7 @@ func (repo *CookingRecipeRepo) StartCooking(ctx context.Context, uID uint, recip
 	tx, err := repo.storage.BeginTx(ctx, nil)
 	if err != nil {
 		logger.Error(ctx,
-			fmt.Sprintf("failed to begin transaction on start cooking for userId: %d, err: %d", uID, err),
+			fmt.Sprintf("failed to begin transaction on start cooking for userId: %d, err: %e", uID, err),
 		)
 		return utils.ErrFailToStartCooking
 	}
@@ -111,7 +172,7 @@ func (repo *CookingRecipeRepo) StartCooking(ctx context.Context, uID uint, recip
 	defer func() {
 		if err != nil {
 			if err = tx.Rollback(); err != nil {
-				logger.Error(ctx, fmt.Sprintf("Failed to rollback transaction: %d for userId: %d", err, uID))
+				logger.Error(ctx, fmt.Sprintf("Failed to rollback transaction: %e for userId: %d", err, uID))
 			}
 		}
 	}()
