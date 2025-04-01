@@ -30,6 +30,13 @@ type Config struct {
 	ElasticsearchAddress  string
 	ElasticsearchUsername string
 	ElasticsearchPassword string
+
+	// Minio
+
+	MinioUser     string
+	MinioPassword string
+	MinioEndpoint string
+	MinioBucket   string
 }
 
 func NewConfig() *Config {
@@ -51,6 +58,11 @@ func NewConfig() *Config {
 		ElasticsearchAddress:  getEnvStr("ELASTIC_ADDRESS", ""),
 		ElasticsearchUsername: getEnvStr("ELASTIC_USERNAME", ""),
 		ElasticsearchPassword: getEnvStr("ELASTIC_PASSWORD", ""),
+
+		MinioUser:     getEnvStr("MINIO_USER", ""),
+		MinioPassword: getEnvStr("MINIO_PASSWD", ""),
+		MinioEndpoint: getEnvStr("MINIO_ENDPOINT", ""),
+		MinioBucket:   getEnvStr("MINIO_BUCKET_NAME", ""),
 	}
 }
 

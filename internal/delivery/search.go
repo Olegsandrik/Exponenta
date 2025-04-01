@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/Olegsandrik/Exponenta/internal/delivery/dto"
+	myerrors "github.com/Olegsandrik/Exponenta/internal/repository/errors"
 	"github.com/Olegsandrik/Exponenta/utils"
 
 	"github.com/gorilla/mux"
@@ -69,7 +70,7 @@ func (h *SearchHandler) Search(w http.ResponseWriter, r *http.Request) {
 	searchResponse, err := h.usecase.Search(ctx, query, diet, dishType, maxTime)
 
 	if err != nil {
-		if errors.Is(err, utils.ErrNoFound) {
+		if errors.Is(err, myerrors.ErrNoFound) {
 			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 				Status: http.StatusNotFound,
 				Msg:    "results not found",

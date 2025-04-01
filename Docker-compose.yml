@@ -32,6 +32,18 @@ services:
         limits:
           memory: 2048m
 
+  minio:
+    image: 'minio/minio'
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    environment:
+      MINIO_ROOT_USER: ${MINIO_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_PASSWD}
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"  # запуск сервера
+
   myAPI:
     image: 'exponent-image'
     environment:
@@ -51,12 +63,18 @@ services:
       - ELASTIC_USERNAME=${ELASTIC_USERNAME}
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
       - ELASTIC_ADDRESS=${ELASTIC_ADDRESS}
+      - MINIO_USER=${MINIO_USER}
+      - MINIO_USER=${MINIO_USER}
+      - MINIO_ENDPOINT=${MINIO_ENDPOINT}
+      - MINIO_ENDPOINT=${MINIO_ENDPOINT}
+      - MINIO_BUCKET_NAME=${MINIO_BUCKET_NAME}
 
     ports:
       - "8080:8080"
     depends_on:
       - postgres
       - elasticsearch
+      - minio
     deploy:
       resources:
         limits:
@@ -65,4 +83,5 @@ services:
 volumes:
   postgres_data:
   elasticsearch_data:
+  minio_data:
 

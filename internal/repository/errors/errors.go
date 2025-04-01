@@ -1,14 +1,13 @@
-package utils
+package errors
 
 import (
-	"errors"
 	"fmt"
 )
 
 var (
-	ErrNoFound                        = errors.New("results not found")
-	ErrFailToSearch                   = errors.New("failed to search")
-	ErrFailToGetSuggest               = errors.New("failed to get suggest")
+	ErrNoFound                        = fmt.Errorf("results not found")
+	ErrFailToSearch                   = fmt.Errorf("failed to search")
+	ErrFailToGetSuggest               = fmt.Errorf("failed to get suggest")
 	ErrFailToGetRecipes               = fmt.Errorf("failed to get recipes")
 	ErrFailToGetRecipeByID            = fmt.Errorf("failed to get recipe by id")
 	ErrFailToGetIngredientsRecipeByID = fmt.Errorf("failed to get ingredients recipe by id")
@@ -28,4 +27,5 @@ var (
 	ErrFailedToGetRecipeStep          = fmt.Errorf("failed to get recipe step")
 	ErrGetMaxMinCookingTime           = fmt.Errorf("err get max min cooking time")
 	ErrToGetFilterValues              = fmt.Errorf("err to get filter values")
+	ErrNoFoundImage                   = fmt.Errorf("no found image")
 )

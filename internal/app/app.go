@@ -13,6 +13,7 @@ import (
 
 	"github.com/Olegsandrik/Exponenta/config"
 	"github.com/Olegsandrik/Exponenta/internal/adapters/elasticsearch"
+	"github.com/Olegsandrik/Exponenta/internal/adapters/minio"
 	"github.com/Olegsandrik/Exponenta/internal/adapters/postgres"
 	"github.com/Olegsandrik/Exponenta/internal/delivery"
 	"github.com/Olegsandrik/Exponenta/internal/middleware"
@@ -74,7 +75,16 @@ func InitApp() *App {
 		panic(err)
 	}
 
+	// Server
+
 	server := InitServer(r, cfg)
+
+	// Minio
+
+	minioAdapter, err := minio.NewMinioAdapter(cfg)
+	if err != nil {
+		panic(err)
+	}
 
 	// ElasticSearch
 
@@ -92,6 +102,13 @@ func InitApp() *App {
 	if err != nil {
 		panic(err)
 	}
+
+	// Images
+
+	imageRepo := repository.NewImageRepository(minioAdapter)
+	imageUsecase := usecase.NewImageUsecase(imageRepo)
+	imageHandler := delivery.NewImageHandler(imageUsecase)
+	imageHandler.InitRouter(apiRouter)
 
 	// Cooking recipe
 
