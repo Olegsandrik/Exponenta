@@ -22,16 +22,17 @@ func (ir *ImageRepository) GetImageByID(ctx context.Context, id int, entity stri
 	reader, err := ir.adapter.Client.GetObject(
 		ctx,
 		ir.adapter.BucketName,
-		fmt.Sprintf("%s/%d.%s", entity, id, "jpg"),
+		fmt.Sprintf("%s/%d.jpg", entity, id),
 		minio.NewEmptyObjectOptions())
 	if err != nil {
-		logger.Info(ctx, fmt.Sprintf("Error getting image: %e for %s/%d.%s", err, entity, id, "jpg"))
+		logger.Info(ctx, fmt.Sprintf("Error getting image: %v for %s/%d.jpg", err, entity, id))
 		return models.ImageModel{}, errors.ErrNoFoundImage
 	}
 
 	info, err := reader.Stat()
 	if err != nil {
-		logger.Info(ctx, fmt.Sprintf("Error getting image stat: %e for %s/%d.%s", err, entity, id, "jpg"))
+		reader.Close()
+		logger.Info(ctx, fmt.Sprintf("Error getting image stat: %v for %s/%d.jpg", err, entity, id))
 		return models.ImageModel{}, errors.ErrNoFoundImage
 	}
 

@@ -3,6 +3,7 @@ package delivery
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -75,6 +76,10 @@ func (h *ImageHandler) GetRecipeImageByID(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	if closer, ok := imageData.Image.(io.Closer); ok {
+		defer closer.Close()
+	}
+
 	formatFile := strings.TrimPrefix(imageData.ContentType, "image/")
 	filename := fmt.Sprintf("%s/%s.%s", recipe, idStr, formatFile)
 
@@ -114,6 +119,10 @@ func (h *ImageHandler) GetEquipmentImageByID(w http.ResponseWriter, r *http.Requ
 			MsgRus: "не получилось получить фотографию рецепта",
 		})
 		return
+	}
+
+	if closer, ok := imageData.Image.(io.Closer); ok {
+		defer closer.Close()
 	}
 
 	formatFile := strings.TrimPrefix(imageData.ContentType, "image/")
