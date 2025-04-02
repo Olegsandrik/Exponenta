@@ -2,11 +2,8 @@ package delivery
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"net/http"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/Olegsandrik/Exponenta/internal/delivery/dto"
@@ -21,7 +18,7 @@ const (
 )
 
 type ImageUsecase interface {
-	GetImageByID(ctx context.Context, id int, entity string) (dto.Image, error)
+	GetImageByID(ctx context.Context, fileName string, entity string) (dto.Image, error)
 }
 
 type ImageHandler struct {
@@ -39,39 +36,38 @@ func NewImageHandler(usecase ImageUsecase) *ImageHandler {
 func (h *ImageHandler) InitRouter(r *mux.Router) {
 	h.router = r.PathPrefix("/image").Subrouter()
 	{
-		h.router.Handle("/recipe/{id}", http.HandlerFunc(h.GetRecipeImageByID)).Methods("GET")
-		h.router.Handle("/equipment/{id}", http.HandlerFunc(h.GetEquipmentImageByID)).Methods("GET")
+		h.router.Handle("/{entity}/{filename}", http.HandlerFunc(h.GetImageByID)).Methods("GET")
 	}
 }
 
-func (h *ImageHandler) GetRecipeImageByID(w http.ResponseWriter, r *http.Request) {
+func (h *ImageHandler) GetImageByID(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	idStr, ok := mux.Vars(r)["id"]
+	entity, ok := mux.Vars(r)["entity"]
 	if !ok {
 		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 			Status: http.StatusBadRequest,
-			Msg:    "id not found",
-			MsgRus: "id не найден",
+			Msg:    "entity not found",
+			MsgRus: "не найден тип картинки",
 		})
 		return
 	}
 
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
+	filename, ok := mux.Vars(r)["filename"]
+	if !ok {
 		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 			Status: http.StatusBadRequest,
-			Msg:    err.Error(),
-			MsgRus: "id должен быть целым",
+			Msg:    "filename not found",
+			MsgRus: "имя файла не найдено",
 		})
 		return
 	}
 
-	imageData, err := h.usecase.GetImageByID(ctx, id, recipe)
+	imageData, err := h.usecase.GetImageByID(ctx, filename, entity)
 	if err != nil {
 		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 			Status: http.StatusInternalServerError,
 			Msg:    err.Error(),
-			MsgRus: "не получилось получить фотографию рецепта",
+			MsgRus: "не получилось получить изображение",
 		})
 		return
 	}
@@ -79,54 +75,6 @@ func (h *ImageHandler) GetRecipeImageByID(w http.ResponseWriter, r *http.Request
 	if closer, ok := imageData.Image.(io.Closer); ok {
 		defer closer.Close()
 	}
-
-	formatFile := strings.TrimPrefix(imageData.ContentType, "image/")
-	filename := fmt.Sprintf("%s/%s.%s", recipe, idStr, formatFile)
-
-	w.Header().Set("Content-Type", imageData.ContentType)
-	http.ServeContent(w, r, filename, time.Now(), imageData.Image)
-}
-
-func (h *ImageHandler) GetEquipmentImageByID(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	idStr, ok := mux.Vars(r)["id"]
-	if !ok {
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
-			Status: http.StatusBadRequest,
-			Msg:    "id not found",
-			MsgRus: "id не найден",
-		})
-		return
-	}
-
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
-			Status: http.StatusBadRequest,
-			Msg:    err.Error(),
-			MsgRus: "id должен быть целым",
-		})
-		return
-	}
-
-	imageData, err := h.usecase.GetImageByID(ctx, id, equipment)
-
-	if err != nil {
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
-			Status: http.StatusInternalServerError,
-			Msg:    err.Error(),
-			MsgRus: "не получилось получить фотографию рецепта",
-		})
-		return
-	}
-
-	if closer, ok := imageData.Image.(io.Closer); ok {
-		defer closer.Close()
-	}
-
-	formatFile := strings.TrimPrefix(imageData.ContentType, "image/")
-	filename := fmt.Sprintf("%s/%s.%s", equipment, idStr, formatFile)
 
 	w.Header().Set("Content-Type", imageData.ContentType)
 	http.ServeContent(w, r, filename, time.Now(), imageData.Image)

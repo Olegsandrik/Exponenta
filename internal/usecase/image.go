@@ -8,7 +8,7 @@ import (
 )
 
 type ImageRepository interface {
-	GetImageByID(ctx context.Context, id int, entity string) (models.ImageModel, error)
+	GetImageByID(ctx context.Context, filename string, entity string) (models.ImageModel, error)
 }
 
 type ImageUsecase struct {
@@ -19,8 +19,8 @@ func NewImageUsecase(imageRepository ImageRepository) *ImageUsecase {
 	return &ImageUsecase{imageRepository: imageRepository}
 }
 
-func (iu *ImageUsecase) GetImageByID(ctx context.Context, id int, entity string) (dto.Image, error) {
-	imageModel, err := iu.imageRepository.GetImageByID(ctx, id, entity)
+func (iu *ImageUsecase) GetImageByID(ctx context.Context, filename string, entity string) (dto.Image, error) {
+	imageModel, err := iu.imageRepository.GetImageByID(ctx, filename, entity)
 	if err != nil {
 		return dto.Image{}, err
 	}
