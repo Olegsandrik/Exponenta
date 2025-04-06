@@ -12,11 +12,6 @@ import (
 	"github.com/gorilla/mux"
 )
 
-const (
-	recipe    = "recipe"
-	equipment = "equipment"
-)
-
 type ImageUsecase interface {
 	GetImageByID(ctx context.Context, fileName string, entity string) (dto.Image, error)
 }

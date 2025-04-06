@@ -37,6 +37,11 @@ type Config struct {
 	MinioPassword string
 	MinioEndpoint string
 	MinioBucket   string
+
+	// Deepseek
+
+	DeepSeekAPIURL string
+	DeepSeekAPIKey string
 }
 
 func NewConfig() *Config {
@@ -63,6 +68,9 @@ func NewConfig() *Config {
 		MinioPassword: getEnvStr("MINIO_PASSWD", ""),
 		MinioEndpoint: getEnvStr("MINIO_ENDPOINT", ""),
 		MinioBucket:   getEnvStr("MINIO_BUCKET_NAME", ""),
+
+		DeepSeekAPIURL: getEnvStr("DEEP_SEEK_API_URL", ""),
+		DeepSeekAPIKey: getEnvStr("DEEP_SEEK_API_KEY", ""),
 	}
 }
 

@@ -124,6 +124,11 @@ func InitApp() *App {
 	searchHandler := delivery.NewSearchHandler(searchUsecase)
 	searchHandler.InitRouter(apiRouter)
 
+	// Voice
+
+	voiceHandler := delivery.NewVoiceHandler(cfg)
+	voiceHandler.InitRouter(apiRouter)
+
 	closers := []io.Closer{postgresAdapter}
 	return &App{
 		router:  r,
