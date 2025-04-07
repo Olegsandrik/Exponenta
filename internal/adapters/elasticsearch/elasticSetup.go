@@ -24,11 +24,11 @@ const (
 			"properties": {
 				"name": {
 					"type": "text",
-					"analyzer": "english"
+					"analyzer": "russian"
 				},
 				"description": {
                 	"type": "text",
-					"analyzer": "english"
+					"analyzer": "russian"
                 },
                 "image": {
                 	"type": "text",
