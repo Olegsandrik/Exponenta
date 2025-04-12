@@ -28,4 +28,5 @@ var (
 	ErrGetMaxMinCookingTime           = fmt.Errorf("err get max min cooking time")
 	ErrToGetFilterValues              = fmt.Errorf("err to get filter values")
 	ErrNoFoundImage                   = fmt.Errorf("no found image")
+	ErrWithGenerating                 = fmt.Errorf("error generating")
 )

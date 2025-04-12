@@ -183,19 +183,19 @@ func (repo *SearchRepository) getFilter(ctx context.Context, filter string) ([]s
 
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf("query err: %e with query: %s", err, q))
-		return nil, fmt.Errorf("err: %e with filter: %s", errors.ErrToGetFilterValues, filter)
+		return nil, fmt.Errorf("err: %+v with filter: %s", errors.ErrToGetFilterValues, filter)
 	}
 
 	if len(items) == 0 {
 		logger.Error(ctx, fmt.Sprintf("no results found with query: %s", q))
-		return nil, fmt.Errorf("err: %e with filter: %s", errors.ErrToGetFilterValues, filter)
+		return nil, fmt.Errorf("err: %+v with filter: %s", errors.ErrToGetFilterValues, filter)
 	}
 
 	hashMap, err := dao.MakeSet(items)
 
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("query err: %e with query: %s", err, q))
-		return nil, fmt.Errorf("err: %e with filter: %s", errors.ErrToGetFilterValues, filter)
+		logger.Error(ctx, fmt.Sprintf("query err: %+v with query: %s", err, q))
+		return nil, fmt.Errorf("err: %+v with filter: %s", errors.ErrToGetFilterValues, filter)
 	}
 
 	result := make([]string, 0, len(hashMap))

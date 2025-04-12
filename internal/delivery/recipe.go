@@ -57,8 +57,8 @@ func (h *CookingRecipeHandler) GetAllRecipes(w http.ResponseWriter, r *http.Requ
 	if numStr == "" {
 		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 			Status: http.StatusBadRequest,
-			Msg:    "id not found",
-			MsgRus: "id не найден",
+			Msg:    "num not found",
+			MsgRus: "num не найден",
 		})
 		return
 	}
@@ -74,6 +74,7 @@ func (h *CookingRecipeHandler) GetAllRecipes(w http.ResponseWriter, r *http.Requ
 	}
 
 	recipeData, err := h.usecase.GetAllRecipe(ctx, num)
+
 	if err != nil {
 		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 			Status: http.StatusInternalServerError,

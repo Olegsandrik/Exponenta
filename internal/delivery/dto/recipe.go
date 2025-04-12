@@ -45,6 +45,11 @@ type TimerRecipeDataDto struct {
 	StepNum int `json:"step"`
 }
 
+type GenerationRecipeDto struct {
+	Query       string   `json:"query"`
+	Ingredients []string `json:"ingredients"`
+}
+
 func GetCookingRecipeData(r *http.Request) (RecipeDto, error) {
 	var recipe RecipeDto
 
@@ -55,6 +60,18 @@ func GetCookingRecipeData(r *http.Request) (RecipeDto, error) {
 	}
 
 	return recipe, nil
+}
+
+func GetGenerationData(r *http.Request) (GenerationRecipeDto, error) {
+	var generateDTO GenerationRecipeDto
+
+	err := json.NewDecoder(r.Body).Decode(&generateDTO)
+
+	if err != nil {
+		return GenerationRecipeDto{}, err
+	}
+
+	return generateDTO, nil
 }
 
 func GetTimerRecipeData(r *http.Request) (TimerRecipeDataDto, error) {

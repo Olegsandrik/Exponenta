@@ -47,3 +47,27 @@ func ConvertVoiceData(ctx context.Context, closer io.ReadCloser) (int, error) {
 
 	return id, nil
 }
+
+func ConvertGenerationData(ctx context.Context, closer io.ReadCloser) (json.RawMessage, error) {
+	var response DeepSeekAPIResp
+	err := json.NewDecoder(closer).Decode(&response)
+
+	if err != nil {
+		return nil, err
+	}
+
+	result := json.RawMessage(response.Choices[0].Message.Content)
+
+	return result, nil
+}
+
+func ConvertGenerationDataTest(ctx context.Context, closer io.ReadCloser) (string, error) {
+	var response DeepSeekAPIResp
+	err := json.NewDecoder(closer).Decode(&response)
+
+	if err != nil {
+		return "", err
+	}
+
+	return response.Choices[0].Message.Content, nil
+}

@@ -172,3 +172,12 @@ func ConvertModelToDao(rm []models.RecipeModel) []RecipeTable {
 	}
 	return RecipeItems
 }
+
+func ParseGeneratedRecipe(rawData json.RawMessage) (RecipeTable, error) {
+	var recipe RecipeTable
+	err := json.Unmarshal(rawData, &recipe)
+	if err != nil {
+		return RecipeTable{}, fmt.Errorf("failed to parse recipe: %w", err)
+	}
+	return recipe, nil
+}

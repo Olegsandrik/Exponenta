@@ -117,6 +117,13 @@ func InitApp() *App {
 	cookingRecipeHandler := delivery.NewCookingRecipeHandler(cookingRecipeUsecase)
 	cookingRecipeHandler.InitRouter(apiRouter)
 
+	// Generation recipe
+
+	generationRecipeRepo := repository.NewGeneratedRecipeRepo(postgresAdapter, cfg)
+	generationRecipeUsecase := usecase.NewGenerateUsecase(generationRecipeRepo)
+	generationRecipeHandler := delivery.NewGeneratedHandler(generationRecipeUsecase)
+	generationRecipeHandler.InitRouter(apiRouter)
+
 	// Search
 
 	searchRepo := repository.NewSearchRepository(elasticsearchAdapter, postgresAdapter)
