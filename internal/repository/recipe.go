@@ -161,7 +161,7 @@ func (repo *CookingRecipeRepo) EndCooking(ctx context.Context, uID uint) error {
 	return nil
 }
 
-func (repo *CookingRecipeRepo) StartCooking(ctx context.Context, uID uint, recipeID int) error {
+func (repo *CookingRecipeRepo) StartCooking(ctx context.Context, uID uint, recipeID int, entity string) error {
 	tx, err := repo.storage.BeginTx(ctx, nil)
 	if err != nil {
 		logger.Error(ctx,
@@ -178,7 +178,7 @@ func (repo *CookingRecipeRepo) StartCooking(ctx context.Context, uID uint, recip
 		}
 	}()
 
-	recipe, err := repo.getRecipe(ctx, tx, recipeID)
+	recipe, err := repo.getRecipe(ctx, tx, recipeID, entity)
 
 	if err != nil {
 		return err
@@ -205,8 +205,11 @@ func (repo *CookingRecipeRepo) StartCooking(ctx context.Context, uID uint, recip
 	return nil
 }
 
-func (repo *CookingRecipeRepo) getRecipe(ctx context.Context, tx *sqlx.Tx, recipeID int) (*dao.RecipeTable, error) {
-	q := `SELECT r.name, r.steps, r.total_steps FROM public.recipes as r WHERE id = $1`
+func (repo *CookingRecipeRepo) getRecipe(ctx context.Context, tx *sqlx.Tx, recipeID int,
+	entity string) (*dao.RecipeTable, error) {
+	q := `SELECT r.name, r.steps, r.total_steps FROM %s as r WHERE id = $1`
+
+	q = fmt.Sprintf(q, entity)
 
 	recipeRows := make([]dao.RecipeTable, 0, 1)
 
@@ -273,6 +276,12 @@ func (repo *CookingRecipeRepo) insertRecipeSteps(
 	for i, step := range steps {
 		if string(step.Length) == "" {
 			step.Length = json.RawMessage("null")
+		}
+		if string(step.Ingredients) == "" {
+			step.Ingredients = json.RawMessage("null")
+		}
+		if string(step.Equipment) == "" {
+			step.Equipment = json.RawMessage("null")
 		}
 
 		if i > 0 {

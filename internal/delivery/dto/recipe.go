@@ -7,6 +7,7 @@ import (
 
 type RecipeDto struct {
 	ID          int             `json:"id,omitempty"`
+	Version     int             `json:"version,omitempty"`
 	Name        string          `json:"name,omitempty"`
 	Desc        string          `json:"description,omitempty"`
 	Img         string          `json:"img,omitempty"`

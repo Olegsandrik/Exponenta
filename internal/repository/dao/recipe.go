@@ -22,6 +22,8 @@ type RecipeTable struct {
 	Diets       json.RawMessage `db:"diets" json:"diets,omitempty"`
 	HealthScore int             `db:"healthscore" json:"healthscore,omitempty"`
 	TotalSteps  int             `db:"total_steps" json:"totalSteps,omitempty"`
+	Ingredients json.RawMessage `db:"ingredients" json:"ingredients,omitempty"`
+	Version     int             `db:"version" json:"version,omitempty"`
 }
 
 type CurrentRecipeTable struct {
@@ -60,6 +62,20 @@ type IngredientTable struct {
 	Image        string  `db:"image" json:"image"`
 	Amount       float64 `db:"amount" json:"amount"`
 	Unit         string  `db:"unit" json:"unit"`
+}
+
+type GeneratedRecipe struct {
+	Version        int `json:"version"`
+	ID             int
+	Name           string          `db:"name" json:"name"`
+	Desc           string          `db:"description" json:"description"`
+	ServingsNum    int             `db:"servings" json:"servingsNum"`
+	TotalSteps     int             `db:"total_steps" json:"totalSteps"`
+	ReadyInMinutes int             `db:"ready_in_minutes" json:"readyInMinutes"`
+	Ingredients    json.RawMessage `db:"ingredients" json:"ingredients"`
+	Steps          json.RawMessage `db:"steps" json:"steps"`
+	DishTypes      json.RawMessage `db:"dish_types" json:"dishTypes"`
+	Diets          json.RawMessage `db:"diets" json:"diets"`
 }
 
 func ConvertTimerToDAO(tt []TimerTable) ([]models.TimerRecipeModel, error) {
@@ -155,6 +171,27 @@ func ConvertDaoToRecipe(rt []RecipeTable) []models.RecipeModel {
 			HealthScore: r.HealthScore,
 			Diets:       string(r.Diets),
 			DishTypes:   string(r.DishTypes),
+			Version:     r.Version,
+		})
+	}
+	return RecipeItems
+}
+
+func ConvertGenRecipeToRecipeModel(rt []RecipeTable) []models.RecipeModel {
+	RecipeItems := make([]models.RecipeModel, 0, len(rt))
+	for _, r := range rt {
+		RecipeItems = append(RecipeItems, models.RecipeModel{
+			ID:          r.ID,
+			Name:        r.Name,
+			Desc:        r.Desc,
+			Img:         r.Img,
+			CookingTime: r.CookingTime,
+			ServingsNum: r.ServingsNum,
+			Steps:       r.Steps,
+			HealthScore: r.HealthScore,
+			Diets:       string(r.Diets),
+			DishTypes:   string(r.DishTypes),
+			Ingredients: r.Ingredients,
 		})
 	}
 	return RecipeItems
@@ -173,11 +210,29 @@ func ConvertModelToDao(rm []models.RecipeModel) []RecipeTable {
 	return RecipeItems
 }
 
-func ParseGeneratedRecipe(rawData json.RawMessage) (RecipeTable, error) {
-	var recipe RecipeTable
+func ParseGeneratedRecipe(rawData json.RawMessage) (GeneratedRecipe, error) {
+	var recipe GeneratedRecipe
 	err := json.Unmarshal(rawData, &recipe)
 	if err != nil {
-		return RecipeTable{}, fmt.Errorf("failed to parse recipe: %w", err)
+		return GeneratedRecipe{}, fmt.Errorf("failed to parse recipe: %w", err)
 	}
 	return recipe, nil
+}
+
+func ConvertGeneratedRecipeToRecipeModels(gr []GeneratedRecipe) []models.RecipeModel {
+	RecipeItems := make([]models.RecipeModel, 0, len(gr))
+	for _, recipe := range gr {
+		RecipeItems = append(RecipeItems, models.RecipeModel{
+			ID:          recipe.ID,
+			Name:        recipe.Name,
+			Desc:        recipe.Desc,
+			ServingsNum: recipe.ServingsNum,
+			Steps:       string(recipe.Steps),
+			DishTypes:   string(recipe.DishTypes),
+			Diets:       string(recipe.Diets),
+			Ingredients: recipe.Ingredients,
+			Version:     recipe.Version,
+		})
+	}
+	return RecipeItems
 }

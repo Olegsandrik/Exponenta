@@ -6,12 +6,12 @@ CREATE TABLE generated_recipes (
     user_id INT,
     name TEXT,
     description TEXT,
-    healthscore DOUBLE PRECISION,
     dish_types JSON,
+    servings INT,
     diets JSON,
+    ingredients JSON,
     ready_in_minutes INT,
     steps JSON,
-    servings INT,
     total_steps INT,
     UNIQUE (user_id, id)
 );
@@ -22,12 +22,12 @@ CREATE TABLE generated_recipes_versions (
     version INT,
     name TEXT,
     description TEXT,
-    healthscore DOUBLE PRECISION,
     dish_types JSON,
+    servings INT,
     diets JSON,
+    ingredients JSON,
     ready_in_minutes INT,
     steps JSON,
-    servings INT,
     total_steps INT,
     FOREIGN KEY (id) REFERENCES generated_recipes(id) ON DELETE CASCADE,
     UNIQUE (id, user_id, version)
@@ -37,6 +37,7 @@ CREATE TABLE generated_recipes_versions (
 
 -- +goose Down
 -- +goose StatementBegin
-DROP TABLE  generated_recipes;
 DROP TABLE generated_recipes_versions;
+DROP TABLE  generated_recipes;
+
 -- +goose StatementEnd

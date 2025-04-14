@@ -13,7 +13,7 @@ func PanicMiddleware(next http.Handler) http.Handler {
 		func(w http.ResponseWriter, r *http.Request) {
 			defer func() {
 				if err := recover(); err != nil {
-					logger.Error(r.Context(), fmt.Sprintf("panic recovered: %e", err))
+					logger.Error(r.Context(), fmt.Sprintf("panic recovered: %+v", err))
 
 					utils.JSONResponse(r.Context(), w, 200, utils.ErrResponse{
 						Status: http.StatusInternalServerError,

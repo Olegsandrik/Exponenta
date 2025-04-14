@@ -2,15 +2,18 @@ package delivery
 
 import (
 	"fmt"
-	"github.com/Olegsandrik/Exponenta/logger"
 	"io"
 	"net/http"
 
+	"github.com/gorilla/mux"
+
 	"github.com/Olegsandrik/Exponenta/config"
 	"github.com/Olegsandrik/Exponenta/internal/delivery/dto"
+	"github.com/Olegsandrik/Exponenta/logger"
 	"github.com/Olegsandrik/Exponenta/utils"
-	"github.com/gorilla/mux"
 )
+
+const promptVoice = "Voice"
 
 type VoiceHandler struct {
 	config *config.Config
@@ -43,7 +46,7 @@ func (h *VoiceHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req, err := utils.BuildRequest(ctx, voiceData.Text, APIURL, APIKey)
+	req, err := utils.BuildRequest(ctx, voiceData.Text, APIURL, APIKey, promptVoice)
 
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf("Build request fail with text: %s , URL: %s", voiceData.Text, APIURL))
@@ -74,7 +77,9 @@ func (h *VoiceHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := dto.ConvertVoiceData(ctx, resp.Body)
+	defer resp.Body.Close()
+
+	id, err := dto.ConvertVoiceData(resp.Body)
 
 	if err != nil {
 		body, _ := io.ReadAll(resp.Body)

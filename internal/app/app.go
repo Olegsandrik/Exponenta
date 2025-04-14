@@ -120,7 +120,7 @@ func InitApp() *App {
 	// Generation recipe
 
 	generationRecipeRepo := repository.NewGeneratedRecipeRepo(postgresAdapter, cfg)
-	generationRecipeUsecase := usecase.NewGenerateUsecase(generationRecipeRepo)
+	generationRecipeUsecase := usecase.NewGenerateUsecase(generationRecipeRepo, cookingRecipeRepo)
 	generationRecipeHandler := delivery.NewGeneratedHandler(generationRecipeUsecase)
 	generationRecipeHandler.InitRouter(apiRouter)
 

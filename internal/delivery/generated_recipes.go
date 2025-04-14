@@ -2,11 +2,13 @@ package delivery
 
 import (
 	"context"
-	"github.com/Olegsandrik/Exponenta/internal/delivery/dto"
-	"github.com/Olegsandrik/Exponenta/utils"
-	"github.com/gorilla/mux"
 	"net/http"
 	"strconv"
+
+	"github.com/gorilla/mux"
+
+	"github.com/Olegsandrik/Exponenta/internal/delivery/dto"
+	"github.com/Olegsandrik/Exponenta/utils"
 )
 
 type GeneratedUsecase interface {
@@ -16,7 +18,7 @@ type GeneratedUsecase interface {
 	UpdateRecipe(ctx context.Context, query string, recipeID int, versionID int) (dto.RecipeDto, error)
 	GetHistoryByID(ctx context.Context, recipeID int) ([]dto.RecipeDto, error)
 	SetNewMainVersion(ctx context.Context, recipeID int, versionID int) error
-	StartCookingByRecipeID(ctx context.Context, recipeID int) error
+	StartCookingByRecipeID(ctx context.Context, recipeID int) (dto.CurrentStepRecipeDto, error)
 }
 
 type GeneratedHandler struct {
@@ -191,6 +193,7 @@ func (h *GeneratedHandler) GetGeneratedRecipeHistoryByID(w http.ResponseWriter, 
 			Msg:    err.Error(),
 			MsgRus: "не получилось получить историю",
 		})
+		return
 	}
 
 	utils.JSONResponse(ctx, w, 200, utils.SuccessResponse{
@@ -289,7 +292,7 @@ func (h *GeneratedHandler) StartCookingGeneratedRecipe(w http.ResponseWriter, r 
 		return
 	}
 
-	err = h.usecase.StartCookingByRecipeID(ctx, recipeID)
+	currentRecipeData, err := h.usecase.StartCookingByRecipeID(ctx, recipeID)
 	if err != nil {
 		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 			Status: http.StatusInternalServerError,
@@ -297,11 +300,11 @@ func (h *GeneratedHandler) StartCookingGeneratedRecipe(w http.ResponseWriter, r 
 		})
 		return
 	}
+
 	utils.JSONResponse(ctx, w, 200, utils.SuccessResponse{
 		Status: http.StatusOK,
-		Data:   nil,
+		Data:   currentRecipeData,
 	})
-
 }
 
 func (h *GeneratedHandler) SetNewMainVersionGeneratedRecipe(w http.ResponseWriter, r *http.Request) {

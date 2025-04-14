@@ -12,7 +12,7 @@ type CookingRecipeRepo interface {
 	GetAllRecipe(ctx context.Context, num int) ([]models.RecipeModel, error)
 	GetRecipeByID(ctx context.Context, id int) ([]models.RecipeModel, error)
 	EndCooking(ctx context.Context, uID uint) error
-	StartCooking(ctx context.Context, uID uint, recipeID int) error
+	StartCooking(ctx context.Context, uID uint, recipeID int, entity string) error
 	GetCurrentRecipe(ctx context.Context, uID uint) (models.CurrentRecipeModel, error)
 	GetNextRecipeStep(ctx context.Context, uID uint) (models.CurrentStepRecipeModel, error)
 	GetPrevRecipeStep(ctx context.Context, uID uint) (models.CurrentStepRecipeModel, error)
@@ -66,7 +66,7 @@ func (u *CookingRecipeUsecase) GetRecipeByID(ctx context.Context, id int) (dto.R
 func (u *CookingRecipeUsecase) StartCookingRecipe(ctx context.Context, recipeID int) (dto.CurrentStepRecipeDto, error) {
 	uID := uint(1)
 
-	err := u.repo.StartCooking(ctx, uID, recipeID)
+	err := u.repo.StartCooking(ctx, uID, recipeID, "public.recipes")
 	if err != nil {
 		return dto.CurrentStepRecipeDto{}, err
 	}

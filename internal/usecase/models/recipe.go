@@ -18,6 +18,7 @@ type RecipeModel struct {
 	Ingredients []byte
 	HealthScore int
 	Steps       string
+	Version     int
 }
 
 type CurrentRecipeModel struct {
@@ -121,6 +122,7 @@ func ConvertRecipeToDto(rm []RecipeModel) []dto.RecipeDto {
 			DishTypes:   json.RawMessage(r.DishTypes),
 			HealthScore: r.HealthScore,
 			Ingredients: r.Ingredients,
+			Version:     r.Version,
 		})
 	}
 	return RecipeItems
