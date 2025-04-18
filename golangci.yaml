@@ -1,0 +1,37 @@
+linters:
+  enable:
+    - gofmt
+    - govet
+    - staticcheck
+    - errcheck
+    - unused
+    - gosimple
+    - ineffassign
+    - typecheck
+    - goconst
+    - gocyclo
+    - goimports
+    - gochecknoglobals
+    - sqlclosecheck
+    - bodyclose
+    - nilerr
+    - asciicheck
+    - lll
+    - loggercheck
+    - tparallel
+    - usestdlibvars
+    - godot
+    - cyclop
+    - gocognit
+    - gosec
+    - prealloc
+    - misspell
+    - unparam
+    - whitespace
+    - nestif
+    - rowserrcheck
+    - noctx
+    - wastedassign
+    - forbidigo
+    - revive
+    - copyloopvar

@@ -1,0 +1,87 @@
+version: '3'
+
+services:
+  postgres:
+    image: postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+
+  elasticsearch:
+    image: bitnami/elasticsearch:7.17.20-debian-12-r2
+    ports:
+      - '9200:9200'
+    environment:
+      node.name: 'es01'
+      bootstrap.memory_lock: true
+      ES_JAVA_OPTS: ${ES_JAVA_OPTS}
+      ELASTIC_USERNAME: ${ELASTIC_USERNAME}
+      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD}
+    volumes:
+      - elasticsearch_data:/bitnami/elasticsearch/data
+    deploy:
+      resources:
+        limits:
+          memory: 2048m
+
+  minio:
+    image: 'minio/minio'
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    environment:
+      MINIO_ROOT_USER: ${MINIO_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_PASSWD}
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"  # запуск сервера
+
+  myAPI:
+    image: 'exponent-image'
+    environment:
+      - POSTGRES_PASSWD=${POSTGRES_PASSWD}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_DRIVER_NAME=${POSTGRES_DRIVER_NAME}
+      - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_DB_NAME=${POSTGRES_DB_NAME}
+      - POSTGRES_DISABLE=${POSTGRES_DISABLE}
+      - POSTGRES_PUBLIC=${POSTGRES_PUBLIC}
+      - SERVER_TIMEOUT=${SERVER_TIMEOUT}
+      - POSTGRES_MAX_OPEN_CONN=${POSTGRES_MAX_OPEN_CONN}
+      - POSTGRES_CONN_IDLE_TIME=${POSTGRES_CONN_IDLE_TIME}
+      - POSTGRES_MIGRATION_HOST=${POSTGRES_MIGRATION_HOST}
+      - SERVER_PORT=${SERVER_PORT}
+      - ELASTIC_USERNAME=${ELASTIC_USERNAME}
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - ELASTIC_ADDRESS=${ELASTIC_ADDRESS}
+      - MINIO_USER=${MINIO_USER}
+      - MINIO_ENDPOINT=${MINIO_ENDPOINT}
+      - MINIO_BUCKET_NAME=${MINIO_BUCKET_NAME}
+      - DEEP_SEEK_API_URL=${DEEP_SEEK_API_URL}
+      - DEEP_SEEK_API_KEY=${DEEP_SEEK_API_KEY}
+
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+      - elasticsearch
+      - minio
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+
+volumes:
+  postgres_data:
+  elasticsearch_data:
+  minio_data:
+
