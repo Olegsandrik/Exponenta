@@ -64,9 +64,12 @@ func (u *CookingRecipeUsecase) GetRecipeByID(ctx context.Context, id int) (dto.R
 }
 
 func (u *CookingRecipeUsecase) StartCookingRecipe(ctx context.Context, recipeID int) (dto.CurrentStepRecipeDto, error) {
-	uID := uint(1)
+	uID, err := utils.GetUserIDFromContext(ctx)
+	if err != nil {
+		return dto.CurrentStepRecipeDto{}, err
+	}
 
-	err := u.repo.StartCooking(ctx, uID, recipeID, "public.recipes")
+	err = u.repo.StartCooking(ctx, uID, recipeID, "public.recipes")
 	if err != nil {
 		return dto.CurrentStepRecipeDto{}, err
 	}
@@ -82,9 +85,12 @@ func (u *CookingRecipeUsecase) StartCookingRecipe(ctx context.Context, recipeID 
 }
 
 func (u *CookingRecipeUsecase) EndCookingRecipe(ctx context.Context) error {
-	uID := uint(1)
+	uID, err := utils.GetUserIDFromContext(ctx)
+	if err != nil {
+		return err
+	}
 
-	err := u.repo.EndCooking(ctx, uID)
+	err = u.repo.EndCooking(ctx, uID)
 	if err != nil {
 		return err
 	}
@@ -93,7 +99,10 @@ func (u *CookingRecipeUsecase) EndCookingRecipe(ctx context.Context) error {
 }
 
 func (u *CookingRecipeUsecase) GetCurrentRecipe(ctx context.Context) (dto.CurrentRecipeDto, error) {
-	uID := uint(1)
+	uID, err := utils.GetUserIDFromContext(ctx)
+	if err != nil {
+		return dto.CurrentRecipeDto{}, err
+	}
 
 	currentRecipe, err := u.repo.GetCurrentRecipe(ctx, uID)
 	if err != nil {
@@ -106,7 +115,10 @@ func (u *CookingRecipeUsecase) GetCurrentRecipe(ctx context.Context) (dto.Curren
 }
 
 func (u *CookingRecipeUsecase) NextStepRecipe(ctx context.Context) (dto.CurrentStepRecipeDto, error) {
-	uID := uint(1)
+	uID, err := utils.GetUserIDFromContext(ctx)
+	if err != nil {
+		return dto.CurrentStepRecipeDto{}, err
+	}
 
 	nextStep, err := u.repo.GetNextRecipeStep(ctx, uID)
 	if err != nil {
@@ -119,7 +131,10 @@ func (u *CookingRecipeUsecase) NextStepRecipe(ctx context.Context) (dto.CurrentS
 }
 
 func (u *CookingRecipeUsecase) PreviousStepRecipe(ctx context.Context) (dto.CurrentStepRecipeDto, error) {
-	uID := uint(1)
+	uID, err := utils.GetUserIDFromContext(ctx)
+	if err != nil {
+		return dto.CurrentStepRecipeDto{}, err
+	}
 
 	prevStep, err := u.repo.GetPrevRecipeStep(ctx, uID)
 	if err != nil {
@@ -132,7 +147,10 @@ func (u *CookingRecipeUsecase) PreviousStepRecipe(ctx context.Context) (dto.Curr
 }
 
 func (u *CookingRecipeUsecase) AddTimerRecipe(ctx context.Context, stepNum int, timeSec int) error {
-	uID := uint(1)
+	uID, err := utils.GetUserIDFromContext(ctx)
+	if err != nil {
+		return err
+	}
 
 	recipeStep, err := u.repo.GetCurrentRecipeStepByNum(ctx, uID, stepNum)
 	if err != nil {
@@ -148,9 +166,12 @@ func (u *CookingRecipeUsecase) AddTimerRecipe(ctx context.Context, stepNum int, 
 }
 
 func (u *CookingRecipeUsecase) DeleteTimerRecipe(ctx context.Context, stepNum int) error {
-	uID := uint(1)
+	uID, err := utils.GetUserIDFromContext(ctx)
+	if err != nil {
+		return err
+	}
 
-	err := u.repo.DeleteTimerFromRecipe(ctx, uID, stepNum)
+	err = u.repo.DeleteTimerFromRecipe(ctx, uID, stepNum)
 	if err != nil {
 		return err
 	}
@@ -159,7 +180,10 @@ func (u *CookingRecipeUsecase) DeleteTimerRecipe(ctx context.Context, stepNum in
 }
 
 func (u *CookingRecipeUsecase) GetTimersRecipe(ctx context.Context) ([]dto.TimerRecipeDto, error) {
-	uID := uint(1)
+	uID, err := utils.GetUserIDFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	timersModels, err := u.repo.GetTimersRecipe(ctx, uID)
 	if err != nil {

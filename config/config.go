@@ -42,6 +42,21 @@ type Config struct {
 
 	DeepSeekAPIURL string
 	DeepSeekAPIKey string
+
+	// Redis
+
+	RedisURL      string
+	RedisPassword string
+	RedisUsername string
+	RedisNetwork  string
+
+	// OAuth
+
+	OauthCodeVer   string
+	OauthCodeCh    string
+	OauthAppID     string
+	OauthAppKey    string
+	OauthAppSecret string
 }
 
 func NewConfig() *Config {
@@ -71,6 +86,17 @@ func NewConfig() *Config {
 
 		DeepSeekAPIURL: getEnvStr("DEEP_SEEK_API_URL", ""),
 		DeepSeekAPIKey: getEnvStr("DEEP_SEEK_API_KEY", ""),
+
+		RedisURL:      getEnvStr("REDIS_URL", ""),
+		RedisPassword: getEnvStr("REDIS_USER_PASSWORD", ""),
+		RedisUsername: getEnvStr("REDIS_USER", ""),
+		RedisNetwork:  getEnvStr("REDIS_NETWORK", ""),
+
+		OauthCodeVer:   getEnvStr("OAUTH_CODE_VER", ""),
+		OauthCodeCh:    getEnvStr("OAUTH_CODE_CH", ""),
+		OauthAppID:     getEnvStr("OAUTH_APP_ID", ""),
+		OauthAppKey:    getEnvStr("OAUTH_APP_KEY", ""),
+		OauthAppSecret: getEnvStr("OAUTH_APP_SECRET", ""),
 	}
 }
 

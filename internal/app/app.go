@@ -15,6 +15,7 @@ import (
 	"github.com/Olegsandrik/Exponenta/internal/adapters/elasticsearch"
 	"github.com/Olegsandrik/Exponenta/internal/adapters/minio"
 	"github.com/Olegsandrik/Exponenta/internal/adapters/postgres"
+	"github.com/Olegsandrik/Exponenta/internal/adapters/redis"
 	"github.com/Olegsandrik/Exponenta/internal/delivery"
 	"github.com/Olegsandrik/Exponenta/internal/middleware"
 	"github.com/Olegsandrik/Exponenta/internal/repository"
@@ -54,30 +55,12 @@ func InitServer(router *mux.Router, config *config.Config) *http.Server {
 func InitApp() *App {
 	cfg := config.NewConfig()
 
-	// Router
-
-	r := mux.NewRouter()
-	r.Use(middleware.LoggingMiddleware)
-	r.Use(middleware.PanicMiddleware)
-	r.Use(middleware.CorsMiddleware)
-
-	apiRouter := r.PathPrefix("/api").Subrouter()
-
-	// Logger
-
-	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, nil)))
-	logger := slog.Default()
-
 	// Postgres
 
 	postgresAdapter, err := postgres.NewPostgresAdapter(cfg)
 	if err != nil {
 		panic(err)
 	}
-
-	// Server
-
-	server := InitServer(r, cfg)
 
 	// Minio
 
@@ -102,6 +85,28 @@ func InitApp() *App {
 	if err != nil {
 		panic(err)
 	}
+
+	// Redis
+
+	redisAdapter, err := redis.NewRedisAdapter(cfg)
+	if err != nil {
+		panic(err)
+	}
+
+	// Router
+
+	r := mux.NewRouter()
+
+	apiRouter := r.PathPrefix("/api").Subrouter()
+
+	// Logger
+
+	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, nil)))
+	logger := slog.Default()
+
+	// Server
+
+	server := InitServer(r, cfg)
 
 	// Images
 
@@ -136,7 +141,21 @@ func InitApp() *App {
 	voiceHandler := delivery.NewVoiceHandler(cfg)
 	voiceHandler.InitRouter(apiRouter)
 
-	closers := []io.Closer{postgresAdapter}
+	// Auth
+
+	authRepo := repository.NewAuthRepo(redisAdapter, postgresAdapter, cfg)
+	authUsecase := usecase.NewAuthUsecase(authRepo)
+	authHandler := delivery.NewAuthHandler(authUsecase)
+	authHandler.InitRouter(apiRouter)
+
+	// Middleware
+
+	r.Use(middleware.CorsMiddleware)
+	r.Use(middleware.PanicMiddleware)
+	r.Use(middleware.LoggingMiddleware)
+	r.Use(middleware.NewAuthMiddleware(authRepo))
+
+	closers := []io.Closer{postgresAdapter, redisAdapter}
 	return &App{
 		router:  r,
 		server:  server,

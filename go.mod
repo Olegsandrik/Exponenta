@@ -6,6 +6,7 @@ toolchain go1.23.5
 
 require (
 	github.com/elastic/go-elasticsearch/v8 v8.17.1
+	github.com/gomodule/redigo v1.9.2
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
 	github.com/jackc/pgx/v5 v5.7.2
@@ -13,6 +14,8 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/kozhurkin/pipers v1.1.3
 	github.com/minio/minio-go/v7 v7.0.89
+	golang.org/x/crypto v0.36.0
+	golang.org/x/oauth2 v0.29.0
 )
 
 require (
@@ -33,7 +36,6 @@ require (
 	go.opentelemetry.io/otel v1.28.0 // indirect
 	go.opentelemetry.io/otel/metric v1.28.0 // indirect
 	go.opentelemetry.io/otel/trace v1.28.0 // indirect
-	golang.org/x/crypto v0.36.0 // indirect
 	golang.org/x/net v0.37.0 // indirect
 	golang.org/x/sync v0.12.0 // indirect
 	golang.org/x/sys v0.31.0 // indirect

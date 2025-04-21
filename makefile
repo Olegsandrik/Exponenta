@@ -2,7 +2,7 @@ include .env
 export $(shell sed 's/=.*//' .env)
 
 run-prod:
-	docker-compose -f Docker-compose.yml up -d postgres elasticsearch
+	docker-compose -f Docker-compose.yml up -d postgres elasticsearch minio redis
 	docker build -t exponent-image .
 	docker-compose -f Docker-compose.yml up -d myAPI
 

@@ -5,6 +5,7 @@ import (
 
 	"github.com/Olegsandrik/Exponenta/internal/delivery/dto"
 	"github.com/Olegsandrik/Exponenta/internal/usecase/models"
+	"github.com/Olegsandrik/Exponenta/utils"
 )
 
 type GenerateRepository interface {
@@ -27,7 +28,11 @@ func NewGenerateUsecase(generateRepository GenerateRepository, recipeRepo Cookin
 }
 
 func (a *GenerateUsecase) GetAllRecipes(ctx context.Context, num int) ([]dto.RecipeDto, error) {
-	uID := uint(1)
+	uID, err := utils.GetUserIDFromContext(ctx)
+
+	if err != nil {
+		return nil, err
+	}
 
 	recipesModels, err := a.GenRepository.GetAllRecipes(ctx, num, uID)
 	if err != nil {
@@ -40,7 +45,11 @@ func (a *GenerateUsecase) GetAllRecipes(ctx context.Context, num int) ([]dto.Rec
 }
 
 func (a *GenerateUsecase) GetRecipeByID(ctx context.Context, recipeID int) (dto.RecipeDto, error) {
-	uID := uint(1)
+	uID, err := utils.GetUserIDFromContext(ctx)
+
+	if err != nil {
+		return dto.RecipeDto{}, err
+	}
 
 	recipeModel, err := a.GenRepository.GetRecipeByID(ctx, recipeID, uID)
 
@@ -54,7 +63,11 @@ func (a *GenerateUsecase) GetRecipeByID(ctx context.Context, recipeID int) (dto.
 }
 
 func (a *GenerateUsecase) CreateRecipe(ctx context.Context, products []string, query string) (dto.RecipeDto, error) {
-	uID := uint(1)
+	uID, err := utils.GetUserIDFromContext(ctx)
+
+	if err != nil {
+		return dto.RecipeDto{}, err
+	}
 
 	recipeModel, err := a.GenRepository.CreateRecipe(ctx, products, query, uID)
 	if err != nil {
@@ -68,7 +81,11 @@ func (a *GenerateUsecase) CreateRecipe(ctx context.Context, products []string, q
 
 func (a *GenerateUsecase) UpdateRecipe(ctx context.Context, query string, recipeID int,
 	versionID int) (dto.RecipeDto, error) {
-	uID := uint(1)
+	uID, err := utils.GetUserIDFromContext(ctx)
+
+	if err != nil {
+		return dto.RecipeDto{}, err
+	}
 
 	recipeModel, err := a.GenRepository.UpdateRecipe(ctx, query, recipeID, versionID, uID)
 
@@ -82,7 +99,11 @@ func (a *GenerateUsecase) UpdateRecipe(ctx context.Context, query string, recipe
 }
 
 func (a *GenerateUsecase) GetHistoryByID(ctx context.Context, recipeID int) ([]dto.RecipeDto, error) {
-	uID := uint(1)
+	uID, err := utils.GetUserIDFromContext(ctx)
+
+	if err != nil {
+		return nil, err
+	}
 
 	recipeModel, err := a.GenRepository.GetHistoryByID(ctx, recipeID, uID)
 
@@ -96,14 +117,23 @@ func (a *GenerateUsecase) GetHistoryByID(ctx context.Context, recipeID int) ([]d
 }
 
 func (a *GenerateUsecase) SetNewMainVersion(ctx context.Context, recipeID int, versionID int) error {
-	uID := uint(1)
+	uID, err := utils.GetUserIDFromContext(ctx)
+
+	if err != nil {
+		return err
+	}
 
 	return a.GenRepository.SetNewMainVersion(ctx, recipeID, versionID, uID)
 }
 
 func (a *GenerateUsecase) StartCookingByRecipeID(ctx context.Context, recipeID int) (dto.CurrentStepRecipeDto, error) {
-	uID := uint(1)
-	err := a.RecipeRepository.StartCooking(ctx, uID, recipeID, "public.generated_recipes")
+	uID, err := utils.GetUserIDFromContext(ctx)
+
+	if err != nil {
+		return dto.CurrentStepRecipeDto{}, err
+	}
+
+	err = a.RecipeRepository.StartCooking(ctx, uID, recipeID, "public.generated_recipes")
 	if err != nil {
 		return dto.CurrentStepRecipeDto{}, err
 	}
