@@ -1,45 +1,62 @@
 package redis
 
 import (
-	"context"
 	"strconv"
+	"time"
 
 	"github.com/gomodule/redigo/redis"
 
 	"github.com/Olegsandrik/Exponenta/config"
-	"github.com/Olegsandrik/Exponenta/logger"
 )
 
 type Adapter struct {
-	conn redis.Conn
+	pool *redis.Pool
 }
 
 func NewRedisAdapter(cfg *config.Config) (*Adapter, error) {
-	logger.Info(context.Background(), cfg.RedisNetwork)
-	conn, err := redis.Dial(cfg.RedisNetwork, cfg.RedisURL,
-		redis.DialPassword(cfg.RedisPassword),
-	)
-
-	if err != nil {
-		return nil, err
+	pool := &redis.Pool{
+		MaxIdle:     10,
+		MaxActive:   100,
+		IdleTimeout: 240 * time.Second,
+		Dial: func() (redis.Conn, error) {
+			conn, err := redis.Dial(cfg.RedisNetwork, cfg.RedisURL,
+				redis.DialPassword(cfg.RedisPassword),
+			)
+			if err != nil {
+				return nil, err
+			}
+			return conn, nil
+		},
+		TestOnBorrow: func(c redis.Conn, t time.Time) error {
+			if time.Since(t) < time.Minute {
+				return nil
+			}
+			_, err := c.Do("PING")
+			return err
+		},
 	}
 
-	_, err = conn.Do("PING")
+	conn := pool.Get()
+	defer conn.Close()
+
+	_, err := conn.Do("PING")
 	if err != nil {
 		return nil, err
 	}
 
 	return &Adapter{
-		conn: conn,
+		pool: pool,
 	}, nil
 }
 
-func (a *Adapter) Close() error {
-	return a.conn.Close()
+func (a *Adapter) GetConn() redis.Conn {
+	return a.pool.Get()
 }
 
 func (a *Adapter) Get(key string) (uint, error) {
-	ansBytes, err := redis.Bytes(a.conn.Do("GET", key))
+	conn := a.pool.Get()
+	defer conn.Close()
+	ansBytes, err := redis.Bytes(conn.Do("GET", key))
 	if err != nil {
 		return 0, err
 	}
@@ -53,7 +70,9 @@ func (a *Adapter) Get(key string) (uint, error) {
 }
 
 func (a *Adapter) Set(key string, value uint) error {
-	_, err := a.conn.Do("SET", key, value, "EX", 86400)
+	conn := a.pool.Get()
+	defer conn.Close()
+	_, err := conn.Do("SET", key, value, "EX", 86400)
 	if err != nil {
 		return err
 	}
@@ -61,7 +80,9 @@ func (a *Adapter) Set(key string, value uint) error {
 }
 
 func (a *Adapter) Delete(key string) error {
-	_, err := a.conn.Do("DEL", key)
+	conn := a.pool.Get()
+	defer conn.Close()
+	_, err := conn.Do("DEL", key)
 	if err != nil {
 		return err
 	}

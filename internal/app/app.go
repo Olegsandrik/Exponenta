@@ -155,7 +155,7 @@ func InitApp() *App {
 	r.Use(middleware.LoggingMiddleware)
 	r.Use(middleware.NewAuthMiddleware(authRepo))
 
-	closers := []io.Closer{postgresAdapter, redisAdapter}
+	closers := []io.Closer{postgresAdapter}
 	return &App{
 		router:  r,
 		server:  server,
