@@ -84,9 +84,12 @@ func (h *AuthHandler) Signup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cookie := http.Cookie{
-		Secure: true,
-		Name:   "session_id",
-		Value:  sID,
+		Name:     "session_id",
+		Value:    sID,
+		HttpOnly: true,
+		Path:     "/",
+		Secure:   true,
+		SameSite: http.SameSiteNoneMode,
 	}
 
 	http.SetCookie(w, &cookie)
@@ -120,9 +123,12 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cookie := http.Cookie{
-		Secure: true,
-		Name:   "session_id",
-		Value:  sID,
+		Name:     "session_id",
+		Value:    sID,
+		HttpOnly: true,
+		Path:     "/",
+		Secure:   true,
+		SameSite: http.SameSiteNoneMode,
 	}
 
 	http.SetCookie(w, &cookie)
@@ -517,9 +523,12 @@ func (h *AuthHandler) LoginWithVK(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cookie := http.Cookie{
-		Secure: true,
-		Name:   "session_id",
-		Value:  sID,
+		Name:     "session_id",
+		Value:    sID,
+		HttpOnly: true,
+		Path:     "/",
+		Secure:   true,
+		SameSite: http.SameSiteNoneMode,
 	}
 
 	http.SetCookie(w, &cookie)
