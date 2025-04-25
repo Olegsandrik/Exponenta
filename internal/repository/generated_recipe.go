@@ -11,7 +11,7 @@ import (
 	"github.com/Olegsandrik/Exponenta/config"
 	"github.com/Olegsandrik/Exponenta/internal/adapters/postgres"
 	"github.com/Olegsandrik/Exponenta/internal/repository/dao"
-	"github.com/Olegsandrik/Exponenta/internal/repository/errors"
+	"github.com/Olegsandrik/Exponenta/internal/repository/repoErrors"
 	"github.com/Olegsandrik/Exponenta/internal/usecase/models"
 	"github.com/Olegsandrik/Exponenta/logger"
 	"github.com/Olegsandrik/Exponenta/utils"
@@ -44,14 +44,14 @@ func (repo *GeneratedRecipeRepo) GetAllRecipes(ctx context.Context, num int,
 
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf("error getting recipe rows: %+v with num: %d", err, num))
-		return nil, errors.ErrFailToGetRecipes
+		return nil, repoErrors.ErrFailToGetRecipes
 	}
 
 	recipeItems := dao.ConvertDaoToRecipe(recipeRows)
 
 	if len(recipeItems) == 0 {
 		logger.Error(ctx, fmt.Sprintf("error getting recipe zero row with num: %d", num))
-		return nil, errors.ErrFailToGetRecipes
+		return nil, repoErrors.ErrFailToGetRecipes
 	}
 
 	logger.Info(ctx, fmt.Sprintf("select %d recipes", len(recipeRows)))
@@ -69,7 +69,7 @@ func (repo *GeneratedRecipeRepo) getRecipeByIDAndVersion(ctx context.Context, re
 	err := repo.storage.Select(ctx, &recipeRows, q, userID, recipeID, versionID)
 
 	if err != nil {
-		return []dao.RecipeTable{}, errors.ErrFailToGetRecipeByIDAndVersion
+		return []dao.RecipeTable{}, repoErrors.ErrFailToGetRecipeByIDAndVersion
 	}
 
 	return recipeRows, nil
@@ -87,14 +87,14 @@ func (repo *GeneratedRecipeRepo) GetRecipeByID(ctx context.Context, recipeID int
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf("error getting recipe row: %s with rid: %d, uid: %d",
 			err.Error(), recipeID, userID))
-		return []models.RecipeModel{}, errors.ErrFailToGetRecipeByID
+		return []models.RecipeModel{}, repoErrors.ErrFailToGetRecipeByID
 	}
 
 	recipeItem := dao.ConvertGenRecipeToRecipeModel(recipeRows)
 
 	if len(recipeItem) == 0 {
 		logger.Error(ctx, fmt.Sprintf("getting zero recipe row with rid: %d, uid: %d", recipeID, userID))
-		return []models.RecipeModel{}, errors.ErrFailToGetRecipeByID
+		return []models.RecipeModel{}, repoErrors.ErrFailToGetRecipeByID
 	}
 
 	logger.Info(ctx, fmt.Sprintf("select recipe with id: %d, uid: %d", recipeID, userID))
@@ -104,8 +104,8 @@ func (repo *GeneratedRecipeRepo) GetRecipeByID(ctx context.Context, recipeID int
 
 func (repo *GeneratedRecipeRepo) GetHistoryByID(ctx context.Context, recipeID int,
 	userID uint) ([]models.RecipeModel, error) {
-	q := `SELECT r.id, r.version, r.name, r.description, r.steps, r.dish_types, r.diets, r.servings, r.total_steps
-		  FROM public.generated_recipes_versions as r WHERE user_id = $1 AND id = $2`
+	q := `SELECT r.id, r.version, r.name, r.description, r.steps, r.dish_types, r.diets, r.servings, r.total_steps, 
+       r.query FROM public.generated_recipes_versions as r WHERE user_id = $1 AND id = $2`
 
 	var recipeRows []dao.RecipeTable
 
@@ -138,10 +138,12 @@ func (repo *GeneratedRecipeRepo) CreateRecipe(ctx context.Context, products []st
 			fmt.Sprintf("failed to get resp data: %+v for userId: %d, query: %s, promptChoice: %s",
 				err, userID, query, promptChoiceGeneration),
 		)
-		return nil, errors.ErrWithGenerating
+		return nil, repoErrors.ErrWithGenerating
 	}
 
 	generatedRecipe, err := dao.ParseGeneratedRecipe(json.RawMessage(respData))
+
+	generatedRecipe.Query = query
 
 	if err != nil {
 		logger.Error(ctx,
@@ -149,7 +151,7 @@ func (repo *GeneratedRecipeRepo) CreateRecipe(ctx context.Context, products []st
 				failed to parse recipe: %+v for userId: %d, query: %s, products: %s`,
 				respData, err, userID, query, products),
 		)
-		return nil, errors.ErrWithGenerating
+		return nil, repoErrors.ErrWithGenerating
 	}
 
 	tx, err := repo.storage.BeginTx(ctx, nil)
@@ -157,7 +159,7 @@ func (repo *GeneratedRecipeRepo) CreateRecipe(ctx context.Context, products []st
 		logger.Error(ctx,
 			fmt.Sprintf("failed to begin transaction on generating recipe: %d, err: %e", userID, err),
 		)
-		return nil, errors.ErrWithGenerating
+		return nil, repoErrors.ErrWithGenerating
 	}
 
 	defer func() {
@@ -176,7 +178,7 @@ func (repo *GeneratedRecipeRepo) CreateRecipe(ctx context.Context, products []st
 			fmt.Sprintf("fail to insert generated recipe: %+v for userId: %d, genRecipe: %+v",
 				err, userID, generatedRecipe),
 		)
-		return nil, errors.ErrWithGenerating
+		return nil, repoErrors.ErrWithGenerating
 	}
 
 	recipeVersion, err := repo.insertVersionGeneratedRecipe(ctx,
@@ -188,11 +190,11 @@ func (repo *GeneratedRecipeRepo) CreateRecipe(ctx context.Context, products []st
 				"fail to insert version generated recipe: %+v for userId: %d, genRecipe: %+v",
 				err, userID, generatedRecipe),
 		)
-		return nil, errors.ErrWithGenerating
+		return nil, repoErrors.ErrWithGenerating
 	}
 
 	if err = tx.Commit(); err != nil {
-		return nil, errors.ErrWithGenerating
+		return nil, repoErrors.ErrWithGenerating
 	}
 
 	generatedRecipe.ID = generateRecipeID
@@ -207,7 +209,7 @@ func (repo *GeneratedRecipeRepo) insertVersionGeneratedRecipe(ctx context.Contex
 	generatedRecipe dao.GeneratedRecipe, userID uint, generateRecipeID int) (int, error) {
 	var generateVersion int
 	q := `INSERT INTO public.generated_recipes_versions (
-	        user_id, 
+	        user_id,
 	        name,
 		    description,
 			dish_types,
@@ -218,12 +220,13 @@ func (repo *GeneratedRecipeRepo) insertVersionGeneratedRecipe(ctx context.Contex
 			steps, 
 			total_steps,
             id,
-            version
+            version,
+            query
 	) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, (
 	SELECT COALESCE(MAX(version), 0) + 1 AS next_version
  		FROM public.generated_recipes_versions
  		WHERE id = $12
- 	)) RETURNING version;`
+ 	), $13) RETURNING version;`
 
 	err := queryer.QueryRowxContext(ctx, q,
 		userID,
@@ -238,6 +241,7 @@ func (repo *GeneratedRecipeRepo) insertVersionGeneratedRecipe(ctx context.Contex
 		generatedRecipe.TotalSteps,
 		generateRecipeID,
 		generateRecipeID,
+		generatedRecipe.Query,
 	).Scan(&generateVersion)
 
 	if err != nil {
@@ -251,8 +255,8 @@ func (repo *GeneratedRecipeRepo) insertGeneratedRecipe(ctx context.Context, quer
 	generatedRecipe dao.GeneratedRecipe, userID uint) (int, error) {
 	var generateRecipeID int
 	q := `INSERT INTO public.generated_recipes (
-    user_id,name,description,dish_types,servings, diets, ingredients, ready_in_minutes, steps, total_steps)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`
+    user_id,name,description,dish_types,servings, diets, ingredients, ready_in_minutes, steps, total_steps, query)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`
 
 	err := queryer.QueryRowxContext(ctx, q,
 		userID,
@@ -264,7 +268,8 @@ func (repo *GeneratedRecipeRepo) insertGeneratedRecipe(ctx context.Context, quer
 		generatedRecipe.Ingredients,
 		generatedRecipe.ReadyInMinutes,
 		generatedRecipe.Steps,
-		generatedRecipe.TotalSteps).Scan(&generateRecipeID)
+		generatedRecipe.TotalSteps,
+		generatedRecipe.Query).Scan(&generateRecipeID)
 
 	if err != nil {
 		return 0, err
@@ -285,7 +290,7 @@ func (repo *GeneratedRecipeRepo) UpdateRecipe(ctx context.Context, query string,
 	}
 
 	if len(recipeDao) == 0 {
-		return nil, errors.ErrWithGenerating
+		return nil, repoErrors.ErrWithGenerating
 	}
 
 	jsonRecipe, err := json.Marshal(recipeDao[0])
@@ -310,17 +315,19 @@ func (repo *GeneratedRecipeRepo) UpdateRecipe(ctx context.Context, query string,
 				prompt: %s`,
 				err, userID, query, recipeID, respData, promptChoiceModernization),
 		)
-		return nil, errors.ErrWithModernization
+		return nil, repoErrors.ErrWithModernization
 	}
 
 	generatedRecipe, err := dao.ParseGeneratedRecipe(json.RawMessage(respData))
+
+	generatedRecipe.Query = query
 
 	if err != nil {
 		logger.Error(ctx,
 			fmt.Sprintf(`failed to parse recipe: %+v for respData: %+v,`,
 				err, respData),
 		)
-		return nil, errors.ErrWithModernization
+		return nil, repoErrors.ErrWithModernization
 	}
 
 	generateVersion, err := repo.insertVersionGeneratedRecipe(ctx, repo.storage, generatedRecipe, userID, recipeID)
@@ -330,7 +337,7 @@ func (repo *GeneratedRecipeRepo) UpdateRecipe(ctx context.Context, query string,
 			fmt.Sprintf(`failed to insert version: %+v for genRecipe: %+v, uID: %d, recipeID: %d`,
 				err, generatedRecipe, userID, recipeID),
 		)
-		return nil, errors.ErrWithModernization
+		return nil, repoErrors.ErrWithModernization
 	}
 
 	generatedRecipe.Version = generateVersion
@@ -365,7 +372,7 @@ func (repo *GeneratedRecipeRepo) SetNewMainVersion(ctx context.Context, recipeID
 			fmt.Sprintf(`failed to get recipe version: %+v for uID: %d, recipeID: %d, versionID: %d`,
 				err, userID, recipeID, versionID),
 		)
-		return errors.ErrWithUpdateVersion
+		return repoErrors.ErrWithUpdateVersion
 	}
 
 	q := `UPDATE public.generated_recipes SET 
@@ -400,7 +407,7 @@ func (repo *GeneratedRecipeRepo) SetNewMainVersion(ctx context.Context, recipeID
 				`failed to update recipe version: %+v for uID: %d, recipeID: %d, versionID: %d, rows: %+v`,
 				err, userID, recipeID, versionID, recipeRows),
 		)
-		return errors.ErrWithUpdateVersion
+		return repoErrors.ErrWithUpdateVersion
 	}
 
 	rowsAffected, err := result.RowsAffected()
@@ -411,7 +418,7 @@ func (repo *GeneratedRecipeRepo) SetNewMainVersion(ctx context.Context, recipeID
 				`failed to get affected rows: %+v for uID: %d, recipeID: %d, versionID: %d, rows: %+v`,
 				err, userID, recipeID, versionID, recipeRows),
 		)
-		return errors.ErrWithUpdateVersion
+		return repoErrors.ErrWithUpdateVersion
 	}
 
 	if rowsAffected == 0 {
@@ -420,7 +427,7 @@ func (repo *GeneratedRecipeRepo) SetNewMainVersion(ctx context.Context, recipeID
 				`zero affected rows: %+v for uID: %d, recipeID: %d, versionID: %d, rows: %+v`,
 				err, userID, recipeID, versionID, recipeRows),
 		)
-		return errors.ErrWithGenerating
+		return repoErrors.ErrWithGenerating
 	}
 
 	return nil

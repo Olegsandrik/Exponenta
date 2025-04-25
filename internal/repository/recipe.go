@@ -8,7 +8,7 @@ import (
 
 	"github.com/Olegsandrik/Exponenta/internal/adapters/postgres"
 	"github.com/Olegsandrik/Exponenta/internal/repository/dao"
-	"github.com/Olegsandrik/Exponenta/internal/repository/errors"
+	"github.com/Olegsandrik/Exponenta/internal/repository/repoErrors"
 	"github.com/Olegsandrik/Exponenta/internal/usecase/models"
 	"github.com/Olegsandrik/Exponenta/logger"
 
@@ -34,14 +34,14 @@ func (repo *CookingRecipeRepo) GetAllRecipe(ctx context.Context, num int) ([]mod
 
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf("error getting recipe rows: %s with num: %d", err.Error(), num))
-		return nil, errors.ErrFailToGetRecipes
+		return nil, repoErrors.ErrFailToGetRecipes
 	}
 
 	recipeItems := dao.ConvertDaoToRecipe(recipeRows)
 
 	if len(recipeItems) == 0 {
 		logger.Error(ctx, fmt.Sprintf("error getting recipe zero row with num: %d", num))
-		return nil, errors.ErrFailToGetRecipes
+		return nil, repoErrors.ErrFailToGetRecipes
 	}
 
 	logger.Info(ctx, fmt.Sprintf("select %d recipes", len(recipeRows)))
@@ -55,7 +55,7 @@ func (repo *CookingRecipeRepo) GetRecipeByID(ctx context.Context, id int) ([]mod
 		logger.Error(ctx,
 			fmt.Sprintf("failed to begin transaction on getting recipe: %d, err: %e", id, err),
 		)
-		return nil, errors.ErrFailToGetRecipeByID
+		return nil, repoErrors.ErrFailToGetRecipeByID
 	}
 
 	defer func() {
@@ -98,19 +98,19 @@ func (repo *CookingRecipeRepo) getIngredientsRecipeByID(ctx context.Context, tx 
 	err := tx.SelectContext(ctx, &ingredientRows, q, id)
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf("error getting ingredients rows: %s with id: %d", err.Error(), id))
-		return nil, errors.ErrFailToGetIngredientsRecipeByID
+		return nil, repoErrors.ErrFailToGetIngredientsRecipeByID
 	}
 
 	if len(ingredientRows) == 0 {
 		logger.Error(ctx, fmt.Sprintf("error getting ingredients rows: no rows with id: %d", id))
-		return nil, errors.ErrFailToGetIngredientsRecipeByID
+		return nil, repoErrors.ErrFailToGetIngredientsRecipeByID
 	}
 
 	return json.Marshal(ingredientRows)
 }
 
 func (repo *CookingRecipeRepo) getRecipeByID(ctx context.Context, tx *sqlx.Tx, id int) ([]models.RecipeModel, error) {
-	q := `SELECT r.name, r.description, r.image, r.steps, r.healthscore, r.dish_types, r.diets, r.servings 
+	q := `SELECT r.name, r.description, r.ready_in_minutes, r.image, r.steps, r.healthscore, r.dish_types, r.diets, r.servings 
 			FROM public.recipes as r WHERE id = $1`
 
 	recipeRows := make([]dao.RecipeTable, 0, 1)
@@ -119,14 +119,14 @@ func (repo *CookingRecipeRepo) getRecipeByID(ctx context.Context, tx *sqlx.Tx, i
 
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf("error getting recipe row: %s with id: %d", err.Error(), id))
-		return []models.RecipeModel{}, errors.ErrFailToGetRecipeByID
+		return []models.RecipeModel{}, repoErrors.ErrFailToGetRecipeByID
 	}
 
 	recipeItem := dao.ConvertDaoToRecipe(recipeRows)
 
 	if len(recipeItem) == 0 {
 		logger.Error(ctx, fmt.Sprintf("getting zero recipe row with id: %d", id))
-		return []models.RecipeModel{}, errors.ErrFailToGetRecipeByID
+		return []models.RecipeModel{}, repoErrors.ErrFailToGetRecipeByID
 	}
 
 	logger.Info(ctx, fmt.Sprintf("select recipe with id: %d", id))
@@ -141,19 +141,19 @@ func (repo *CookingRecipeRepo) EndCooking(ctx context.Context, uID uint) error {
 
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf("error deleting recipe row: %e with id: %d", err, uID))
-		return errors.ErrFailToEndCooking
+		return repoErrors.ErrFailToEndCooking
 	}
 
 	rowsAffected, err := result.RowsAffected()
 
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf("failed to get rows affected by delete with userId: %d, err: %e", uID, err))
-		return errors.ErrFailToEndCooking
+		return repoErrors.ErrFailToEndCooking
 	}
 
 	if rowsAffected == 0 {
 		logger.Error(ctx, fmt.Sprintf("recipe not delete with userId: %d", uID))
-		return errors.ErrNoCurrentRecipe
+		return repoErrors.ErrNoCurrentRecipe
 	}
 
 	logger.Info(ctx, fmt.Sprintf("delete row into current_recipe with userId %d", uID))
@@ -167,7 +167,7 @@ func (repo *CookingRecipeRepo) StartCooking(ctx context.Context, uID uint, recip
 		logger.Error(ctx,
 			fmt.Sprintf("failed to begin transaction on start cooking for userId: %d, err: %e", uID, err),
 		)
-		return errors.ErrFailToStartCooking
+		return repoErrors.ErrFailToStartCooking
 	}
 
 	defer func() {
@@ -215,12 +215,12 @@ func (repo *CookingRecipeRepo) getRecipe(ctx context.Context, tx *sqlx.Tx, recip
 
 	if err := tx.SelectContext(ctx, &recipeRows, q, recipeID); err != nil {
 		logger.Error(ctx, fmt.Sprintf("error getting recipe row: %e with recipeId: %d", err, recipeID))
-		return nil, errors.ErrFailToGetRecipeByID
+		return nil, repoErrors.ErrFailToGetRecipeByID
 	}
 
 	if len(recipeRows) == 0 {
 		logger.Error(ctx, fmt.Sprintf("recipe not found with recipeId: %d", recipeID))
-		return nil, errors.ErrNoSuchRecipeWithID
+		return nil, repoErrors.ErrNoSuchRecipeWithID
 	}
 
 	return &recipeRows[0], nil
@@ -239,7 +239,7 @@ func (repo *CookingRecipeRepo) insertCurrentRecipe(
 				uID,
 				recipeID),
 		)
-		return errors.ErrUserAlreadyCooking
+		return repoErrors.ErrUserAlreadyCooking
 	}
 
 	rowsAffected, err := result.RowsAffected()
@@ -251,7 +251,7 @@ func (repo *CookingRecipeRepo) insertCurrentRecipe(
 				uID,
 				recipeID),
 		)
-		return errors.ErrFailToStartCooking
+		return repoErrors.ErrFailToStartCooking
 	}
 
 	logger.Info(ctx, fmt.Sprintf("inserted %d rows into current_recipe", rowsAffected))
@@ -265,7 +265,7 @@ func (repo *CookingRecipeRepo) insertRecipeSteps(
 
 	if err := json.Unmarshal([]byte(stepsJSON), &steps); err != nil {
 		logger.Error(ctx, fmt.Sprintf("unmarshal error %s with recipe %d", err, recipeID))
-		return errors.ErrFailToStartCooking
+		return repoErrors.ErrFailToStartCooking
 	}
 
 	q := "INSERT INTO public.current_recipe_step " +
@@ -303,19 +303,19 @@ func (repo *CookingRecipeRepo) insertRecipeSteps(
 				uID,
 				recipeID),
 		)
-		return errors.ErrFailToStartCooking
+		return repoErrors.ErrFailToStartCooking
 	}
 
 	rowsAffected, err := result.RowsAffected()
 
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf("err with get rows affected by insert: %d for userId: %d", err, uID))
-		return errors.ErrFailToStartCooking
+		return repoErrors.ErrFailToStartCooking
 	}
 
 	if rowsAffected == 0 {
 		logger.Error(ctx, fmt.Sprintf("failed to insert steps for userId: %d, recipeId: %d", uID, recipeID))
-		return errors.ErrFailToStartCooking
+		return repoErrors.ErrFailToStartCooking
 	}
 
 	logger.Info(ctx, fmt.Sprintf("Inserted %d rows into current_recipe_step", rowsAffected))
@@ -339,12 +339,12 @@ func (repo *CookingRecipeRepo) GetCurrentRecipe(ctx context.Context, uID uint) (
 				err.Error(),
 				uID),
 		)
-		return models.CurrentRecipeModel{}, errors.ErrFailedToGetCurrentRecipe
+		return models.CurrentRecipeModel{}, repoErrors.ErrFailedToGetCurrentRecipe
 	}
 
 	if len(recipeRows) == 0 {
 		logger.Error(ctx, fmt.Sprintf("recipe not found with userId: %d", uID))
-		return models.CurrentRecipeModel{}, errors.ErrFailedToGetCurrentRecipe
+		return models.CurrentRecipeModel{}, repoErrors.ErrFailedToGetCurrentRecipe
 	}
 
 	currentRecipeItem := dao.ConvertDaoToCurrentRecipe(recipeRows[0])
@@ -362,19 +362,19 @@ func (repo *CookingRecipeRepo) updateCurrentStepTx(ctx context.Context, tx *sqlx
 
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf("failed to update current_step: %e for userId: %d", err, uID))
-		return errors.ErrFailedToUpdateRecipeStep
+		return repoErrors.ErrFailedToUpdateRecipeStep
 	}
 
 	rowsAffected, err := result.RowsAffected()
 
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf("err with get rows affected by update: %d for userId: %d", err, uID))
-		return errors.ErrFailedToUpdateRecipeStep
+		return repoErrors.ErrFailedToUpdateRecipeStep
 	}
 
 	if rowsAffected == 0 {
 		logger.Error(ctx, fmt.Sprintf("now found row to update current_step for userId: %d", uID))
-		return errors.ErrFailedToUpdateRecipeStep
+		return repoErrors.ErrFailedToUpdateRecipeStep
 	}
 
 	return nil
@@ -392,12 +392,12 @@ func (repo *CookingRecipeRepo) getCurrentStep(
 	err := sqlx.SelectContext(ctx, queryer, &currentStep, q, uID)
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf("error getting recipe step row: %s with recipeId: %d", err.Error(), uID))
-		return models.CurrentStepRecipeModel{}, errors.ErrFailedToGetCurrentStepCooking
+		return models.CurrentStepRecipeModel{}, repoErrors.ErrFailedToGetCurrentStepCooking
 	}
 
 	if len(currentStep) == 0 {
 		logger.Error(ctx, fmt.Sprintf("recipe step not found with userId: %d", uID))
-		return models.CurrentStepRecipeModel{}, errors.ErrFailedToGetCurrentStepCooking
+		return models.CurrentStepRecipeModel{}, repoErrors.ErrFailedToGetCurrentStepCooking
 	}
 
 	currentStepModel := dao.ConvertDaoToCurrentStepRecipe(currentStep[0])
@@ -412,7 +412,7 @@ func (repo *CookingRecipeRepo) GetPrevRecipeStep(ctx context.Context, uID uint) 
 		logger.Error(ctx,
 			fmt.Sprintf("failed to begin transaction on get prev step userId: %d, err: %d", uID, err),
 		)
-		return models.CurrentStepRecipeModel{}, errors.ErrFailedToGetPrevStep
+		return models.CurrentStepRecipeModel{}, repoErrors.ErrFailedToGetPrevStep
 	}
 
 	defer func() {
@@ -455,7 +455,7 @@ func (repo *CookingRecipeRepo) GetNextRecipeStep(ctx context.Context, uID uint) 
 		logger.Error(ctx,
 			fmt.Sprintf("failed to begin transaction on get next step userId: %d, err: %d", uID, err),
 		)
-		return models.CurrentStepRecipeModel{}, errors.ErrFailedToGetNextStep
+		return models.CurrentStepRecipeModel{}, repoErrors.ErrFailedToGetNextStep
 	}
 
 	defer func() {
@@ -512,7 +512,7 @@ func (repo *CookingRecipeRepo) AddTimerToRecipe(
 			description,
 			endTime,
 			err))
-		return errors.ErrFailedToAddTimer
+		return repoErrors.ErrFailedToAddTimer
 	}
 
 	rowsAffected, err := result.RowsAffected()
@@ -527,7 +527,7 @@ func (repo *CookingRecipeRepo) AddTimerToRecipe(
 			endTime,
 			err),
 		)
-		return errors.ErrFailedToAddTimer
+		return repoErrors.ErrFailedToAddTimer
 	}
 
 	if rowsAffected == 0 {
@@ -539,7 +539,7 @@ func (repo *CookingRecipeRepo) AddTimerToRecipe(
 			endTime,
 			err),
 		)
-		return errors.ErrFailedToAddTimer
+		return repoErrors.ErrFailedToAddTimer
 	}
 
 	return nil
@@ -557,7 +557,7 @@ func (repo *CookingRecipeRepo) DeleteTimerFromRecipe(ctx context.Context, uID ui
 			StepNum,
 			err),
 		)
-		return errors.ErrFailedToDeleteTimer
+		return repoErrors.ErrFailedToDeleteTimer
 	}
 
 	rowsAffected, err := result.RowsAffected()
@@ -566,7 +566,7 @@ func (repo *CookingRecipeRepo) DeleteTimerFromRecipe(ctx context.Context, uID ui
 			uID,
 			StepNum),
 		)
-		return errors.ErrFailedToDeleteTimer
+		return repoErrors.ErrFailedToDeleteTimer
 	}
 
 	if rowsAffected == 0 {
@@ -574,7 +574,7 @@ func (repo *CookingRecipeRepo) DeleteTimerFromRecipe(ctx context.Context, uID ui
 			uID,
 			StepNum),
 		)
-		return errors.ErrFailedToDeleteTimer
+		return repoErrors.ErrFailedToDeleteTimer
 	}
 
 	return nil
@@ -588,7 +588,7 @@ func (repo *CookingRecipeRepo) GetTimersRecipe(ctx context.Context, uID uint) ([
 	err := repo.storage.Select(ctx, &timers, q, uID)
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf("error getting timers: %s with userId: %d", err.Error(), uID))
-		return []models.TimerRecipeModel{}, errors.ErrFailedToGetTimers
+		return []models.TimerRecipeModel{}, repoErrors.ErrFailedToGetTimers
 	}
 
 	timersModel, err := dao.ConvertTimerToDAO(timers)
@@ -596,7 +596,7 @@ func (repo *CookingRecipeRepo) GetTimersRecipe(ctx context.Context, uID uint) ([
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf(
 			"error converting timers table to models: %s with userId: %d", err.Error(), uID))
-		return []models.TimerRecipeModel{}, errors.ErrFailedToGetTimers
+		return []models.TimerRecipeModel{}, repoErrors.ErrFailedToGetTimers
 	}
 
 	logger.Info(ctx, fmt.Sprintf("get timers for userId: %d", uID))
@@ -620,12 +620,12 @@ func (repo *CookingRecipeRepo) GetCurrentRecipeStepByNum(
 			uID,
 			stepNum),
 		)
-		return models.CurrentStepRecipeModel{}, errors.ErrFailedToGetRecipeStep
+		return models.CurrentStepRecipeModel{}, repoErrors.ErrFailedToGetRecipeStep
 	}
 
 	if len(recipeStepRow) == 0 {
 		logger.Error(ctx, fmt.Sprintf("not found recipe step with userId: %d, stepNum: %d", uID, stepNum))
-		return models.CurrentStepRecipeModel{}, errors.ErrFailedToGetRecipeStep
+		return models.CurrentStepRecipeModel{}, repoErrors.ErrFailedToGetRecipeStep
 	}
 
 	logger.Info(ctx, fmt.Sprintf("get recipe step for userId: %d, stepNum: %d", uID, stepNum))

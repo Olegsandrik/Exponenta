@@ -3,11 +3,13 @@ package delivery
 import (
 	"context"
 	"errors"
+	"github.com/Olegsandrik/Exponenta/internal/repository/repoErrors"
 	"net/http"
 
 	"github.com/gorilla/mux"
 
 	"github.com/Olegsandrik/Exponenta/internal/delivery/dto"
+	"github.com/Olegsandrik/Exponenta/internal/usecase/usecaseErrors"
 	"github.com/Olegsandrik/Exponenta/utils"
 )
 
@@ -143,16 +145,16 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	cookie, err := r.Cookie("session_id")
 	if err != nil {
-		if errors.Is(err, http.ErrNoCookie) {
+		if errors.As(err, &http.ErrNoCookie) {
 			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
-				Status: http.StatusBadRequest,
+				Status: http.StatusUnauthorized,
 				Msg:    "user not authenticated",
 				MsgRus: "пользователь не авторизован",
 			})
 			return
 		}
 		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
-			Status: http.StatusBadRequest,
+			Status: http.StatusUnauthorized,
 			Msg:    "failed to get cookie",
 			MsgRus: "ошибка получения cookie",
 		})
@@ -162,7 +164,7 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	ok := h.authUsecase.IsLoggedIn(ctx, cookie.Value)
 	if !ok {
 		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
-			Status: http.StatusBadRequest,
+			Status: http.StatusUnauthorized,
 			Msg:    "user not authenticated",
 			MsgRus: "пользователь не авторизован",
 		})
@@ -190,7 +192,7 @@ func (h *AuthHandler) Profile(w http.ResponseWriter, r *http.Request) {
 	uID, err := utils.GetUserIDFromContext(ctx)
 	if err != nil {
 		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
-			Status: http.StatusBadRequest,
+			Status: http.StatusUnauthorized,
 			Msg:    "user not authenticated",
 			MsgRus: "пользователь не авторизован",
 		})
@@ -200,7 +202,7 @@ func (h *AuthHandler) Profile(w http.ResponseWriter, r *http.Request) {
 	user, err := h.authUsecase.GetUserByID(ctx, uID)
 	if err != nil {
 		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
-			Status: http.StatusInternalServerError,
+			Status: http.StatusUnauthorized,
 			Msg:    err.Error(),
 			MsgRus: "не получилось найти профиль пользователя",
 		})
@@ -234,7 +236,7 @@ func (h *AuthHandler) EditName(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
-			Status: http.StatusBadRequest,
+			Status: http.StatusUnauthorized,
 			Msg:    "user not authenticated",
 			MsgRus: "пользователь не авторизован",
 		})
@@ -254,7 +256,7 @@ func (h *AuthHandler) EditName(w http.ResponseWriter, r *http.Request) {
 
 	err = h.authUsecase.UpdateUserName(ctx, uID, editData.NewName)
 	if err != nil {
-		if errors.Is(err, errors.New("new name is empty")) {
+		if errors.As(err, &usecaseErrors.ErrEmptyName) {
 			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 				Status: http.StatusBadRequest,
 				Msg:    "new name is required",
@@ -282,7 +284,7 @@ func (h *AuthHandler) EditLogin(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
-			Status: http.StatusBadRequest,
+			Status: http.StatusUnauthorized,
 			Msg:    "user not authenticated",
 			MsgRus: "пользователь не авторизован",
 		})
@@ -312,20 +314,29 @@ func (h *AuthHandler) EditLogin(w http.ResponseWriter, r *http.Request) {
 
 	err = h.authUsecase.UpdateUserLogin(ctx, uID, editData.NewLogin)
 	if err != nil {
-		if errors.Is(err, errors.New("new login is empty")) {
+		if errors.As(err, &usecaseErrors.ErrEmptyLogin) {
 			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 				Status: http.StatusBadRequest,
 				Msg:    "new login is required",
-				MsgRus: "новая почта не найдена",
+				MsgRus: "новый login не найден",
+			})
+			return
+		} else if errors.As(err, &repoErrors.ErrLoginAlreadyUsed) {
+			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
+				Status: http.StatusBadRequest,
+				Msg:    "new login is required",
+				MsgRus: "новый login не найден",
+			})
+			return
+		} else {
+			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
+				Status: http.StatusInternalServerError,
+				Msg:    err.Error(),
+				MsgRus: "не получилось обновить данные пользователя",
 			})
 			return
 		}
-		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
-			Status: http.StatusInternalServerError,
-			Msg:    err.Error(),
-			MsgRus: "не получилось обновить данные пользователя",
-		})
-		return
+
 	}
 
 	utils.JSONResponse(ctx, w, http.StatusOK, utils.SuccessResponse{
@@ -340,7 +351,7 @@ func (h *AuthHandler) EditSurname(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
-			Status: http.StatusBadRequest,
+			Status: http.StatusUnauthorized,
 			Msg:    "user not authenticated",
 			MsgRus: "пользователь не авторизован",
 		})
@@ -360,7 +371,7 @@ func (h *AuthHandler) EditSurname(w http.ResponseWriter, r *http.Request) {
 
 	err = h.authUsecase.UpdateUserSurname(ctx, uID, editData.NewSurname)
 	if err != nil {
-		if errors.Is(err, errors.New("new surname is empty")) {
+		if errors.As(err, &usecaseErrors.ErrEmptySurname) {
 			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 				Status: http.StatusBadRequest,
 				Msg:    "new surname is required",
@@ -388,7 +399,7 @@ func (h *AuthHandler) EditPassword(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
-			Status: http.StatusBadRequest,
+			Status: http.StatusUnauthorized,
 			Msg:    "user not authenticated",
 			MsgRus: "пользователь не авторизован",
 		})
@@ -418,11 +429,11 @@ func (h *AuthHandler) EditPassword(w http.ResponseWriter, r *http.Request) {
 
 	err = h.authUsecase.UpdatePassword(ctx, uID, editData.Password, editData.NewPassword)
 	if err != nil {
-		if errors.Is(err, errors.New("password or newPassword is empty")) {
+		if errors.As(err, &usecaseErrors.ErrEmptyPassword) {
 			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 				Status: http.StatusBadRequest,
 				Msg:    "new password or password is required",
-				MsgRus: "новое имя не найдено",
+				MsgRus: "новый пароль не найден",
 			})
 			return
 		}
@@ -436,16 +447,16 @@ func (h *AuthHandler) EditPassword(w http.ResponseWriter, r *http.Request) {
 
 	cookie, err := r.Cookie("session_id")
 	if err != nil {
-		if errors.Is(err, http.ErrNoCookie) {
+		if errors.As(err, &http.ErrNoCookie) {
 			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
-				Status: http.StatusBadRequest,
+				Status: http.StatusUnauthorized,
 				Msg:    "user not authenticated",
 				MsgRus: "пользователь не авторизован",
 			})
 			return
 		}
 		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
-			Status: http.StatusBadRequest,
+			Status: http.StatusUnauthorized,
 			Msg:    "failed to get cookie",
 			MsgRus: "ошибка получения cookie",
 		})
@@ -473,12 +484,13 @@ func (h *AuthHandler) DeleteProfile(w http.ResponseWriter, r *http.Request) {
 	uID, err := utils.GetUserIDFromContext(ctx)
 	if err != nil {
 		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
-			Status: http.StatusBadRequest,
+			Status: http.StatusUnauthorized,
 			Msg:    "user not authenticated",
 			MsgRus: "пользователь не авторизован",
 		})
 		return
 	}
+
 	err = h.authUsecase.DeleteProfile(ctx, uID)
 	if err != nil {
 		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
@@ -487,6 +499,7 @@ func (h *AuthHandler) DeleteProfile(w http.ResponseWriter, r *http.Request) {
 			MsgRus: "не получилось удалить профиль пользователя",
 		})
 	}
+
 	utils.JSONResponse(ctx, w, http.StatusOK, utils.SuccessResponse{
 		Status: http.StatusOK,
 		Data:   nil,
@@ -507,7 +520,7 @@ func (h *AuthHandler) LoginWithVK(w http.ResponseWriter, r *http.Request) {
 
 	sID, err := h.authUsecase.LoginVK(ctx, loginVKData)
 	if err != nil {
-		if errors.Is(err, errors.New("device id or code or state is empty")) {
+		if errors.As(err, &usecaseErrors.ErrEmptyVKLoginData) {
 			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 				Status: http.StatusBadRequest,
 				Msg:    "invalid request",

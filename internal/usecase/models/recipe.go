@@ -19,6 +19,7 @@ type RecipeModel struct {
 	HealthScore int
 	Steps       string
 	Version     int
+	Query       string
 }
 
 type CurrentRecipeModel struct {
@@ -123,6 +124,7 @@ func ConvertRecipeToDto(rm []RecipeModel) []dto.RecipeDto {
 			HealthScore: r.HealthScore,
 			Ingredients: r.Ingredients,
 			Version:     r.Version,
+			Query:       r.Query,
 		})
 	}
 	return RecipeItems

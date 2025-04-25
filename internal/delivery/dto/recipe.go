@@ -11,13 +11,14 @@ type RecipeDto struct {
 	Name        string          `json:"name,omitempty"`
 	Desc        string          `json:"description,omitempty"`
 	Img         string          `json:"img,omitempty"`
-	CookingTime int             `json:"cookingTime,omitempty"`
+	CookingTime int             `json:"cookingTimeMinutes,omitempty"`
 	ServingsNum int             `json:"servingsNum,omitempty"`
 	DishTypes   json.RawMessage `json:"dishTypes,omitempty"`
 	Diets       json.RawMessage `json:"diets,omitempty"`
 	HealthScore int             `json:"healthScore,omitempty"`
 	Ingredients json.RawMessage `json:"ingredients,omitempty"`
 	Steps       json.RawMessage `json:"steps,omitempty"`
+	Query       string          `json:"query,omitempty"`
 }
 
 type CurrentRecipeDto struct {

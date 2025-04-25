@@ -7,7 +7,7 @@ import (
 	"strconv"
 
 	"github.com/Olegsandrik/Exponenta/internal/delivery/dto"
-	myerrors "github.com/Olegsandrik/Exponenta/internal/repository/errors"
+	myerrors "github.com/Olegsandrik/Exponenta/internal/repository/repoErrors"
 	"github.com/Olegsandrik/Exponenta/utils"
 
 	"github.com/gorilla/mux"

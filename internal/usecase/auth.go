@@ -2,10 +2,11 @@ package usecase
 
 import (
 	"context"
-	"errors"
+	"github.com/microcosm-cc/bluemonday"
 
 	"github.com/Olegsandrik/Exponenta/internal/delivery/dto"
 	"github.com/Olegsandrik/Exponenta/internal/usecase/models"
+	"github.com/Olegsandrik/Exponenta/internal/usecase/usecaseErrors"
 	"github.com/Olegsandrik/Exponenta/utils"
 )
 
@@ -63,7 +64,7 @@ func (a *AuthUsecase) GetUserByID(ctx context.Context, uID uint) (dto.User, erro
 
 func (a *AuthUsecase) SignUp(ctx context.Context, user dto.User) (uint, string, error) {
 	if user.Name == "" || user.Login == "" || user.Password == "" || user.SurName == "" {
-		return 0, "", errors.New("name or username or login or password is empty")
+		return 0, "", usecaseErrors.ErrEmptySingUpData
 	}
 	PasswordHash, err := utils.HashPassword(user.Password)
 	if err != nil {
@@ -92,7 +93,7 @@ func (a *AuthUsecase) SignUp(ctx context.Context, user dto.User) (uint, string, 
 
 func (a *AuthUsecase) UpdatePassword(ctx context.Context, userID uint, password string, newPassword string) error {
 	if password == "" || newPassword == "" {
-		return errors.New("password or newPassword is empty")
+		return usecaseErrors.ErrEmptyPassword
 	}
 
 	prevPassword, err := a.repo.GetUserPassword(ctx, userID)
@@ -113,24 +114,34 @@ func (a *AuthUsecase) UpdatePassword(ctx context.Context, userID uint, password 
 }
 
 func (a *AuthUsecase) UpdateUserName(ctx context.Context, userID uint, newUsername string) error {
+	sanitizer := bluemonday.UGCPolicy()
+
+	newUsername = sanitizer.Sanitize(newUsername)
 	if newUsername == "" {
-		return errors.New("new name is empty")
+		return usecaseErrors.ErrEmptyName
 	}
 
 	return a.repo.UpdateUser(ctx, "name", newUsername, userID)
 }
 
 func (a *AuthUsecase) UpdateUserSurname(ctx context.Context, userID uint, newUsername string) error {
+	sanitizer := bluemonday.UGCPolicy()
+
+	newUsername = sanitizer.Sanitize(newUsername)
 	if newUsername == "" {
-		return errors.New("new surname is empty")
+		return usecaseErrors.ErrEmptySurname
 	}
 
 	return a.repo.UpdateUser(ctx, "sur_name", newUsername, userID)
 }
 
 func (a *AuthUsecase) UpdateUserLogin(ctx context.Context, userID uint, newLogin string) error {
+	sanitizer := bluemonday.UGCPolicy()
+
+	newLogin = sanitizer.Sanitize(newLogin)
+
 	if newLogin == "" {
-		return errors.New("new email is empty")
+		return usecaseErrors.ErrEmptyLogin
 	}
 
 	return a.repo.UpdateUser(ctx, "login", newLogin, userID)
@@ -146,7 +157,7 @@ func (a *AuthUsecase) IsVKUser(ctx context.Context, userID uint) bool {
 
 func (a *AuthUsecase) LoginVK(ctx context.Context, data dto.VKLoginData) (string, error) {
 	if data.DeviceID == "" || data.Code == "" || data.State == "" {
-		return "", errors.New("device id or code or state is empty")
+		return "", usecaseErrors.ErrEmptyVKLoginData
 	}
 	return a.repo.LoginVK(ctx, models.ConvertVKLoginDataDtoToModel(data))
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -16,9 +15,14 @@ import (
 
 	"github.com/Olegsandrik/Exponenta/config"
 	"github.com/Olegsandrik/Exponenta/internal/repository/dao"
+	"github.com/Olegsandrik/Exponenta/internal/repository/repoErrors"
 	"github.com/Olegsandrik/Exponenta/internal/usecase/models"
 	"github.com/Olegsandrik/Exponenta/logger"
 	"github.com/Olegsandrik/Exponenta/utils"
+)
+
+const (
+	APIURL = "https://api.vk.com/method/users.get?fields=photo_50,about&access_token=%s&v=5.131"
 )
 
 type RedisAdapter interface {
@@ -54,7 +58,7 @@ func (repo *AuthRepo) CreateSession(ctx context.Context, uID uint) (string, erro
 	err := repo.RedisAdapter.Set(sID, uID)
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf("fail to create session %v", err))
-		return "", fmt.Errorf("fail to create session")
+		return "", repoErrors.ErrFailToCreateSession
 	}
 
 	logger.Info(ctx, fmt.Sprintf("create sessionID %s", time.Since(timeStart)))
@@ -66,7 +70,7 @@ func (repo *AuthRepo) DeleteSession(ctx context.Context, sID string) error {
 	err := repo.RedisAdapter.Delete(sID)
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf("fail to delete session %v", err))
-		return fmt.Errorf("fail to delete session")
+		return repoErrors.ErrFailToDeleteSession
 	}
 	logger.Info(ctx, fmt.Sprintf("delete userID by sessionID in %s", time.Since(timeStart)))
 	return nil
@@ -89,7 +93,7 @@ func (repo *AuthRepo) GetUserIDBySessionID(ctx context.Context, sID string) (uin
 	uID, err := repo.RedisAdapter.Get(sID)
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf("fail to get userID by sessionID %v", err))
-		return 0, fmt.Errorf("fail to get userID by sessionID")
+		return 0, repoErrors.ErrFailToUserIDBySessionID
 	}
 
 	logger.Info(ctx, fmt.Sprintf("get userID by sessionID in %s", time.Since(timeStart)))
@@ -105,12 +109,12 @@ func (repo *AuthRepo) GetUser(ctx context.Context, login string) (models.User, e
 
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf("fail to get user rows: %v", err))
-		return models.User{}, errors.New("fail to get user")
+		return models.User{}, repoErrors.ErrFailToGetUser
 	}
 
 	if len(userTable) == 0 {
 		logger.Error(ctx, fmt.Sprintf("zero value get with login: %s", login))
-		return models.User{}, errors.New("fail to get user")
+		return models.User{}, repoErrors.ErrFailToGetUser
 	}
 
 	userModel := dao.ConvertUserTableToModel(userTable)
@@ -128,7 +132,7 @@ func (repo *AuthRepo) CreateUser(ctx context.Context, user models.User) (uint, e
 
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf("fail to create user: %v", err))
-		return 0, errors.New("fail to create user")
+		return 0, repoErrors.ErrFailToCreateUser
 	}
 
 	return userID, nil
@@ -147,11 +151,7 @@ func (repo *AuthRepo) IsExistsUserVK(ctx context.Context, VKID uint) (bool, uint
 
 	logger.Info(ctx, fmt.Sprintf("success get id: %v with VKID: %d", userID, VKID))
 
-	if userID == 0 {
-		return false, 0
-	}
-
-	return true, userID
+	return userID != 0, userID
 }
 
 func (repo *AuthRepo) CreateUserVK(ctx context.Context, user models.UserVK) (uint, error) {
@@ -162,7 +162,7 @@ func (repo *AuthRepo) CreateUserVK(ctx context.Context, user models.UserVK) (uin
 
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf("fail to create user: %v", err))
-		return 0, errors.New("fail to create user")
+		return 0, repoErrors.ErrFailToCreateUser
 	}
 
 	return userID, nil
@@ -173,18 +173,18 @@ func (repo *AuthRepo) DeleteUser(ctx context.Context, uID uint) error {
 
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf("fail to delete user: %v", err))
-		return errors.New("fail to delete user")
+		return repoErrors.ErrFailToDeleteUser
 	}
 
 	count, err := result.RowsAffected()
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf("fail to get affected rows user: %v", err))
-		return errors.New("fail to delete user")
+		return repoErrors.ErrFailToDeleteUser
 	}
 
 	if count == 0 {
 		logger.Info(ctx, fmt.Sprintf("zero rows affected: %v", err))
-		return errors.New("fail to delete user")
+		return repoErrors.ErrFailToDeleteUser
 	}
 
 	logger.Info(ctx, fmt.Sprintf("delete user with id %d", uID))
@@ -195,8 +195,12 @@ func (repo *AuthRepo) UpdateUser(ctx context.Context, entity string, newVal stri
 	q := fmt.Sprintf("UPDATE Users SET %s = $1 WHERE id = $2", entity)
 	result, err := repo.PostgresAdapter.Exec(ctx, q, newVal, uID)
 	if err != nil {
+		if entity == "login" {
+			logger.Error(ctx, fmt.Sprintf("fail to update user login: %v", err))
+			return repoErrors.ErrLoginAlreadyUsed
+		}
 		logger.Error(ctx, fmt.Sprintf("fail to update user: %v", err))
-		return errors.New("fail to update user")
+		return repoErrors.ErrFailToUpdateUser
 	}
 
 	count, err := result.RowsAffected()
@@ -207,7 +211,7 @@ func (repo *AuthRepo) UpdateUser(ctx context.Context, entity string, newVal stri
 			entity,
 			uID,
 		))
-		return errors.New("fail to update user")
+		return repoErrors.ErrFailToUpdateUser
 	}
 
 	if count == 0 {
@@ -216,7 +220,7 @@ func (repo *AuthRepo) UpdateUser(ctx context.Context, entity string, newVal stri
 			entity,
 			uID,
 		))
-		return errors.New("fail to update user")
+		return repoErrors.ErrFailToUpdateUser
 	}
 
 	logger.Info(ctx, fmt.Sprintf("update user %s with id %d", entity, uID))
@@ -231,12 +235,12 @@ func (repo *AuthRepo) GetUserLoginByID(ctx context.Context, userID uint) (string
 
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf("fail to get user rows: %v, uID: %d", err, userID))
-		return "", errors.New("fail to get user")
+		return "", repoErrors.ErrFailToGetUser
 	}
 
 	if login == "" {
 		logger.Info(ctx, fmt.Sprintf("zero value get with id %d", userID))
-		return "", errors.New("user not found")
+		return "", repoErrors.ErrUserNotFound
 	}
 
 	logger.Info(ctx, fmt.Sprintf("success get user name with id %d", userID))
@@ -251,12 +255,12 @@ func (repo *AuthRepo) GetUserByID(ctx context.Context, userID uint) (models.User
 
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf("fail to get user rows: %v, uID: %d", err, userID))
-		return models.User{}, errors.New("fail to get user")
+		return models.User{}, repoErrors.ErrFailToGetUser
 	}
 
 	if len(userTable) == 0 {
 		logger.Info(ctx, fmt.Sprintf("zero value get with id %d", userID))
-		return models.User{}, errors.New("user not found")
+		return models.User{}, repoErrors.ErrUserNotFound
 	}
 
 	logger.Info(ctx, fmt.Sprintf("success get user name with id %d", userID))
@@ -272,11 +276,11 @@ func (repo *AuthRepo) GetUserPassword(ctx context.Context, userID uint) (string,
 	err := repo.PostgresAdapter.Select(ctx, &userTable, q, userID)
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf("fail to get user rows: %v", err))
-		return "", errors.New("fail to get user")
+		return "", repoErrors.ErrFailToGetUser
 	}
 	if len(userTable) == 0 {
 		logger.Info(ctx, fmt.Sprintf("zero value get with id %d", userID))
-		return "", errors.New("user not found")
+		return "", repoErrors.ErrUserNotFound
 	}
 
 	logger.Info(ctx, fmt.Sprintf("success get user password with id %d", userID))
@@ -311,7 +315,7 @@ func (repo *AuthRepo) LoginVK(ctx context.Context, data models.VKLoginData) (str
 	)
 
 	if err != nil {
-		return "", errors.New("fail to get token")
+		return "", repoErrors.ErrFailedToGetToken
 	}
 
 	conf := &oauth2.Config{
@@ -320,10 +324,10 @@ func (repo *AuthRepo) LoginVK(ctx context.Context, data models.VKLoginData) (str
 		Endpoint:     vk.Endpoint,
 	}
 
-	client := conf.Client(ctx, utils.Conv(token))
-	resp, err := client.Get(fmt.Sprintf(utils.APIURL, token.AccessToken))
+	client := conf.Client(ctx, token)
+	resp, err := client.Get(fmt.Sprintf(APIURL, token.AccessToken))
 	if err != nil {
-		return "", errors.New("fail to get data by token")
+		return "", repoErrors.ErrFailedToGetDataByToken
 	}
 	defer resp.Body.Close()
 
@@ -337,8 +341,8 @@ func (repo *AuthRepo) LoginVK(ctx context.Context, data models.VKLoginData) (str
 		} `json:"response"`
 	}
 
-	if err := json.Unmarshal(body, &respData); err != nil || len(respData.Response) == 0 {
-		return "", errors.New("fail to get unmarshal data")
+	if err = json.Unmarshal(body, &respData); err != nil || len(respData.Response) == 0 {
+		return "", repoErrors.ErrFailedToUnmarshalJSON
 	}
 
 	exist, uID := repo.IsExistsUserVK(ctx, respData.Response[0].ID)
@@ -349,12 +353,12 @@ func (repo *AuthRepo) LoginVK(ctx context.Context, data models.VKLoginData) (str
 			SurName: respData.Response[0].LastName,
 		})
 		if err != nil {
-			return "", errors.New("fail to create vk user")
+			return "", repoErrors.ErrFailToCreateVKUser
 		}
 	}
 	sID, err := repo.CreateSession(ctx, uID)
 	if err != nil {
-		return "", errors.New("fail to create session")
+		return "", repoErrors.ErrFailToCreateSession
 	}
 
 	return sID, nil

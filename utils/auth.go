@@ -3,6 +3,7 @@ package utils
 import (
 	"context"
 	"fmt"
+	"github.com/Olegsandrik/Exponenta/internal/repository/repoErrors"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -12,7 +13,7 @@ type UserID struct{}
 func GetUserIDFromContext(ctx context.Context) (uint, error) {
 	userID, ok := ctx.Value(UserID{}).(uint)
 	if !ok || userID == 0 {
-		return 0, fmt.Errorf("user not authenticated")
+		return 0, repoErrors.ErrUserNotAuth
 	}
 	return userID, nil
 }

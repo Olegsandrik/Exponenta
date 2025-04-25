@@ -24,6 +24,7 @@ type RecipeTable struct {
 	TotalSteps  int             `db:"total_steps" json:"totalSteps,omitempty"`
 	Ingredients json.RawMessage `db:"ingredients" json:"ingredients,omitempty"`
 	Version     int             `db:"version" json:"version,omitempty"`
+	Query       string          `db:"query" json:"query,omitempty"`
 }
 
 type CurrentRecipeTable struct {
@@ -76,6 +77,7 @@ type GeneratedRecipe struct {
 	Steps          json.RawMessage `db:"steps" json:"steps"`
 	DishTypes      json.RawMessage `db:"dish_types" json:"dishTypes"`
 	Diets          json.RawMessage `db:"diets" json:"diets"`
+	Query          string
 }
 
 func ConvertTimerToDAO(tt []TimerTable) ([]models.TimerRecipeModel, error) {
@@ -172,6 +174,7 @@ func ConvertDaoToRecipe(rt []RecipeTable) []models.RecipeModel {
 			Diets:       string(r.Diets),
 			DishTypes:   string(r.DishTypes),
 			Version:     r.Version,
+			Query:       r.Query,
 		})
 	}
 	return RecipeItems
@@ -232,6 +235,7 @@ func ConvertGeneratedRecipeToRecipeModels(gr []GeneratedRecipe) []models.RecipeM
 			Diets:       string(recipe.Diets),
 			Ingredients: recipe.Ingredients,
 			Version:     recipe.Version,
+			Query:       recipe.Query,
 		})
 	}
 	return RecipeItems

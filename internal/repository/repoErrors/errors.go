@@ -1,4 +1,4 @@
-package errors
+package repoErrors
 
 import (
 	"fmt"
@@ -32,4 +32,18 @@ var (
 	ErrFailToGetRecipeByIDAndVersion  = fmt.Errorf("failed to get recipe by id and version")
 	ErrWithModernization              = fmt.Errorf("failed to modern recipe")
 	ErrWithUpdateVersion              = fmt.Errorf("failed to update version")
+	ErrFailToCreateSession            = fmt.Errorf("fail to create session")
+	ErrFailToGetUser                  = fmt.Errorf("fail to get user")
+	ErrFailToDeleteSession            = fmt.Errorf("fail to delete session")
+	ErrFailToUserIDBySessionID        = fmt.Errorf("fail to get userID by sessionID")
+	ErrFailToCreateUser               = fmt.Errorf("fail to create user")
+	ErrFailToDeleteUser               = fmt.Errorf("fail to delete user")
+	ErrLoginAlreadyUsed               = fmt.Errorf("login already used by other user")
+	ErrFailToUpdateUser               = fmt.Errorf("fail to update user")
+	ErrUserNotFound                   = fmt.Errorf("user not found")
+	ErrFailedToGetToken               = fmt.Errorf("failed to get token")
+	ErrFailedToGetDataByToken         = fmt.Errorf("failed to get data by token")
+	ErrFailedToUnmarshalJSON          = fmt.Errorf("failed to unmarshal data")
+	ErrFailToCreateVKUser             = fmt.Errorf("fail to create vk user")
+	ErrUserNotAuth                    = fmt.Errorf("user not authenticated")
 )

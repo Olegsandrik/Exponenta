@@ -15,11 +15,7 @@ import (
 	"github.com/Olegsandrik/Exponenta/config"
 )
 
-const (
-	APIURL = "https://api.vk.com/method/users.get?fields=photo_50,about&access_token=%s&v=5.131"
-)
-
-func Conv(t *ExToken) *oauth2.Token {
+func convertToken(t *ExToken) *oauth2.Token {
 	return &oauth2.Token{
 		AccessToken:  t.AccessToken,
 		TokenType:    t.TokenType,
@@ -44,7 +40,7 @@ type ExToken struct {
 
 func ExchangeToken(
 	ctx context.Context, code string, deviceID string, state string, config *config.Config,
-) (*ExToken, error) {
+) (*oauth2.Token, error) {
 	data := url.Values{}
 	data.Set("grant_type", "authorization_code")
 	data.Set("code_verifier", config.OauthCodeVer)
@@ -86,5 +82,7 @@ func ExchangeToken(
 		return nil, fmt.Errorf("failed to parse response: %w", err)
 	}
 
-	return &tokenResp, nil
+	OauthToken := convertToken(&tokenResp)
+
+	return OauthToken, nil
 }
