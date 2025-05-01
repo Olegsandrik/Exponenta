@@ -77,8 +77,24 @@ func (h *AuthHandler) Signup(w http.ResponseWriter, r *http.Request) {
 
 	_, sID, err := h.authUsecase.SignUp(ctx, signupData)
 	if err != nil {
+		if errors.Is(err, repoErrors.ErrUserWithThisLoginAlreadyExists) {
+			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+				Status: http.StatusBadRequest,
+				Msg:    err.Error(),
+				MsgRus: "пользователь с таким логином уже существует",
+			})
+			return
+		} else if errors.Is(err, usecaseErrors.ErrTooEasyPassword) {
+			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
+				Status: http.StatusBadRequest,
+				Msg:    "password is too easy",
+				MsgRus: "пароль должен иметь длину не менее 8 символов, а также " +
+					"содержать не менее 2 спецсимволов (!@#$&*)",
+			})
+			return
+		}
 		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
-			Status: http.StatusBadRequest,
+			Status: http.StatusInternalServerError,
 			Msg:    err.Error(),
 			MsgRus: "не получилось зарегистрироваться",
 		})
@@ -116,6 +132,21 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	sID, err := h.authUsecase.Login(ctx, loginData.Login, loginData.Password)
 	if err != nil {
+		if errors.Is(err, repoErrors.ErrFailToGetUser) {
+			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+				Status: http.StatusBadRequest,
+				Msg:    err.Error(),
+				MsgRus: "пользователя с таким логином не существует",
+			})
+			return
+		} else if errors.Is(err, usecaseErrors.ErrInvalidPassword) {
+			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+				Status: http.StatusBadRequest,
+				Msg:    err.Error(),
+				MsgRus: "неверный пароль для данного логина",
+			})
+			return
+		}
 		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusInternalServerError,
 			Msg:    err.Error(),
@@ -145,7 +176,7 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	cookie, err := r.Cookie("session_id")
 	if err != nil {
-		if errors.As(err, &http.ErrNoCookie) {
+		if errors.Is(err, http.ErrNoCookie) {
 			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 				Status: http.StatusUnauthorized,
 				Msg:    "user not authenticated",
@@ -256,7 +287,7 @@ func (h *AuthHandler) EditName(w http.ResponseWriter, r *http.Request) {
 
 	err = h.authUsecase.UpdateUserName(ctx, uID, editData.NewName)
 	if err != nil {
-		if errors.As(err, &usecaseErrors.ErrEmptyName) {
+		if errors.Is(err, usecaseErrors.ErrEmptyName) {
 			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 				Status: http.StatusBadRequest,
 				Msg:    "new name is required",
@@ -314,14 +345,14 @@ func (h *AuthHandler) EditLogin(w http.ResponseWriter, r *http.Request) {
 
 	err = h.authUsecase.UpdateUserLogin(ctx, uID, editData.NewLogin)
 	if err != nil {
-		if errors.As(err, &usecaseErrors.ErrEmptyLogin) {
+		if errors.Is(err, usecaseErrors.ErrEmptyLogin) {
 			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 				Status: http.StatusBadRequest,
 				Msg:    "new login is required",
 				MsgRus: "новый login не найден",
 			})
 			return
-		} else if errors.As(err, &repoErrors.ErrLoginAlreadyUsed) {
+		} else if errors.Is(err, repoErrors.ErrLoginAlreadyUsed) {
 			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 				Status: http.StatusBadRequest,
 				Msg:    "login is already used",
@@ -371,7 +402,7 @@ func (h *AuthHandler) EditSurname(w http.ResponseWriter, r *http.Request) {
 
 	err = h.authUsecase.UpdateUserSurname(ctx, uID, editData.NewSurname)
 	if err != nil {
-		if errors.As(err, &usecaseErrors.ErrEmptySurname) {
+		if errors.Is(err, usecaseErrors.ErrEmptySurname) {
 			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 				Status: http.StatusBadRequest,
 				Msg:    "new surname is required",
@@ -429,11 +460,26 @@ func (h *AuthHandler) EditPassword(w http.ResponseWriter, r *http.Request) {
 
 	err = h.authUsecase.UpdatePassword(ctx, uID, editData.Password, editData.NewPassword)
 	if err != nil {
-		if errors.As(err, &usecaseErrors.ErrEmptyPassword) {
+		if errors.Is(err, usecaseErrors.ErrEmptyPassword) {
 			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 				Status: http.StatusBadRequest,
 				Msg:    "new password or password is required",
 				MsgRus: "новый пароль не найден",
+			})
+			return
+		} else if errors.Is(err, usecaseErrors.ErrInvalidPassword) {
+			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
+				Status: http.StatusBadRequest,
+				Msg:    "password is invalid",
+				MsgRus: "пароль некорректен",
+			})
+			return
+		} else if errors.Is(err, usecaseErrors.ErrTooEasyPassword) {
+			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
+				Status: http.StatusBadRequest,
+				Msg:    "new password is too easy",
+				MsgRus: "новый пароль должен иметь длину не менее 8 символов, а также " +
+					"содержать не менее 2 спецсимволов (!@#$&*)",
 			})
 			return
 		}
@@ -447,7 +493,7 @@ func (h *AuthHandler) EditPassword(w http.ResponseWriter, r *http.Request) {
 
 	cookie, err := r.Cookie("session_id")
 	if err != nil {
-		if errors.As(err, &http.ErrNoCookie) {
+		if errors.Is(err, http.ErrNoCookie) {
 			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 				Status: http.StatusUnauthorized,
 				Msg:    "user not authenticated",
@@ -463,7 +509,6 @@ func (h *AuthHandler) EditPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: logout all sessions
 	err = h.authUsecase.Logout(ctx, cookie.Value)
 	if err != nil {
 		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
@@ -520,7 +565,7 @@ func (h *AuthHandler) LoginWithVK(w http.ResponseWriter, r *http.Request) {
 
 	sID, err := h.authUsecase.LoginVK(ctx, loginVKData)
 	if err != nil {
-		if errors.As(err, &usecaseErrors.ErrEmptyVKLoginData) {
+		if errors.Is(err, usecaseErrors.ErrEmptyVKLoginData) {
 			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 				Status: http.StatusBadRequest,
 				Msg:    "invalid request",

@@ -132,7 +132,7 @@ func (repo *AuthRepo) CreateUser(ctx context.Context, user models.User) (uint, e
 
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf("fail to create user: %v", err))
-		return 0, repoErrors.ErrFailToCreateUser
+		return 0, repoErrors.ErrUserWithThisLoginAlreadyExists
 	}
 
 	return userID, nil

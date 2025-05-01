@@ -9,4 +9,6 @@ var (
 	ErrEmptySurname     = fmt.Errorf("new surname is empty")
 	ErrEmptyLogin       = fmt.Errorf("new login is empty")
 	ErrEmptyVKLoginData = fmt.Errorf("device id or code or state is empty")
+	ErrInvalidPassword  = fmt.Errorf("invalid password")
+	ErrTooEasyPassword  = fmt.Errorf("too easy password")
 )

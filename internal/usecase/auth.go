@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"github.com/microcosm-cc/bluemonday"
+	"regexp"
 
 	"github.com/Olegsandrik/Exponenta/internal/delivery/dto"
 	"github.com/Olegsandrik/Exponenta/internal/usecase/models"
@@ -38,8 +39,9 @@ func (a *AuthUsecase) Login(ctx context.Context, login string, password string) 
 	if err != nil {
 		return "", err
 	}
+
 	if err = utils.CheckPassword(password, user.PasswordHash); err != nil {
-		return "", err
+		return "", usecaseErrors.ErrInvalidPassword
 	}
 	return a.repo.CreateSession(ctx, user.ID)
 }
@@ -66,6 +68,13 @@ func (a *AuthUsecase) SignUp(ctx context.Context, user dto.User) (uint, string, 
 	if user.Name == "" || user.Login == "" || user.Password == "" || user.SurName == "" {
 		return 0, "", usecaseErrors.ErrEmptySingUpData
 	}
+
+	re := regexp.MustCompile(`[!@#$&*]`)
+
+	if len(user.Password) < 8 || len(re.FindAllString(user.Password, -1)) < 2 {
+		return 0, "", usecaseErrors.ErrTooEasyPassword
+	}
+
 	PasswordHash, err := utils.HashPassword(user.Password)
 	if err != nil {
 		return 0, "", err
@@ -102,7 +111,13 @@ func (a *AuthUsecase) UpdatePassword(ctx context.Context, userID uint, password 
 	}
 
 	if err = utils.CheckPassword(password, prevPassword); err != nil {
-		return err
+		return usecaseErrors.ErrInvalidPassword
+	}
+
+	re := regexp.MustCompile(`[!@#$&*]`)
+
+	if len(newPassword) < 8 || len(re.FindAllString(newPassword, -1)) < 2 {
+		return usecaseErrors.ErrTooEasyPassword
 	}
 
 	passwordHash, err := utils.HashPassword(newPassword)

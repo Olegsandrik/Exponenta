@@ -76,7 +76,7 @@ func (h *GeneratedHandler) GetAllGeneratedRecipes(w http.ResponseWriter, r *http
 
 	recipesData, err := h.usecase.GetAllRecipes(ctx, num)
 	if err != nil {
-		if errors.As(err, &repoErrors.ErrUserNotAuth) {
+		if errors.Is(err, repoErrors.ErrUserNotAuth) {
 			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 				Status: http.StatusUnauthorized,
 				Msg:    repoErrors.ErrUserNotAuth.Error(),
@@ -123,7 +123,7 @@ func (h *GeneratedHandler) GetGeneratedRecipeByID(w http.ResponseWriter, r *http
 	recipeData, err := h.usecase.GetRecipeByID(ctx, recipeID)
 
 	if err != nil {
-		if errors.As(err, &repoErrors.ErrUserNotAuth) {
+		if errors.Is(err, repoErrors.ErrUserNotAuth) {
 			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 				Status: http.StatusUnauthorized,
 				Msg:    repoErrors.ErrUserNotAuth.Error(),
@@ -175,6 +175,13 @@ func (h *GeneratedHandler) CreateGeneratedRecipe(w http.ResponseWriter, r *http.
 				MsgRus: "пользователь не авторизован",
 			})
 			return
+		} else if errors.Is(err, repoErrors.ErrAllKeysAreUsing) {
+			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+				Status: http.StatusUnauthorized,
+				Msg:    repoErrors.ErrAllKeysAreUsing.Error(),
+				MsgRus: "На данный момент шеф занят, попробуйте позднее",
+			})
+			return
 		}
 		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 			Status: http.StatusInternalServerError,
@@ -214,7 +221,7 @@ func (h *GeneratedHandler) GetGeneratedRecipeHistoryByID(w http.ResponseWriter, 
 
 	history, err := h.usecase.GetHistoryByID(ctx, recipeID)
 	if err != nil {
-		if errors.As(err, &repoErrors.ErrUserNotAuth) {
+		if errors.Is(err, repoErrors.ErrUserNotAuth) {
 			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 				Status: http.StatusUnauthorized,
 				Msg:    repoErrors.ErrUserNotAuth.Error(),
@@ -290,11 +297,18 @@ func (h *GeneratedHandler) UpgradeGeneratedRecipeByIDByVersion(w http.ResponseWr
 
 	recipeData, err := h.usecase.UpdateRecipe(ctx, generatedRecipeData.Query, recipeID, versionID)
 	if err != nil {
-		if errors.As(err, &repoErrors.ErrUserNotAuth) {
+		if errors.Is(err, repoErrors.ErrUserNotAuth) {
 			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 				Status: http.StatusUnauthorized,
 				Msg:    repoErrors.ErrUserNotAuth.Error(),
 				MsgRus: "пользователь не авторизован",
+			})
+			return
+		} else if errors.Is(err, repoErrors.ErrAllKeysAreUsing) {
+			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+				Status: http.StatusUnauthorized,
+				Msg:    repoErrors.ErrAllKeysAreUsing.Error(),
+				MsgRus: "На данный момент шеф занят, попробуйте позднее",
 			})
 			return
 		}
@@ -336,7 +350,7 @@ func (h *GeneratedHandler) StartCookingGeneratedRecipe(w http.ResponseWriter, r 
 
 	currentRecipeData, err := h.usecase.StartCookingByRecipeID(ctx, recipeID)
 	if err != nil {
-		if errors.As(err, &repoErrors.ErrUserNotAuth) {
+		if errors.Is(err, repoErrors.ErrUserNotAuth) {
 			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 				Status: http.StatusUnauthorized,
 				Msg:    repoErrors.ErrUserNotAuth.Error(),
@@ -401,7 +415,7 @@ func (h *GeneratedHandler) SetNewMainVersionGeneratedRecipe(w http.ResponseWrite
 
 	err = h.usecase.SetNewMainVersion(ctx, recipeID, versionID)
 	if err != nil {
-		if errors.As(err, &repoErrors.ErrUserNotAuth) {
+		if errors.Is(err, repoErrors.ErrUserNotAuth) {
 			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 				Status: http.StatusUnauthorized,
 				Msg:    repoErrors.ErrUserNotAuth.Error(),
