@@ -39,7 +39,7 @@ func (repo *SearchRepository) Search(ctx context.Context, query string, diet str
 							"should": [
 								{
 									"multi_match": {
-										"query": "%s",
+										"query": %s,
 										"fields": ["name^5", "description^3"],
 										"type": "best_fields",
 										"operator": "or"
@@ -48,7 +48,7 @@ func (repo *SearchRepository) Search(ctx context.Context, query string, diet str
 								{
 									"match_phrase": {
 										"name": {
-											"query": "%s",
+											"query": %s,
 											"boost": 5
 										}
 									}
@@ -56,7 +56,7 @@ func (repo *SearchRepository) Search(ctx context.Context, query string, diet str
 								{
 									"match_phrase": {
 										"description": {
-											"query": "%s",
+											"query": %s,
 											"boost": 5
 										}
 									}
@@ -91,6 +91,10 @@ func (repo *SearchRepository) Search(ctx context.Context, query string, diet str
 	)
 
 	defer res.Body.Close()
+	
+	if res.IsError() {
+		logger.Error(ctx, fmt.Sprintf("Elastic search result %s, %s", res.Status(), res.Body))
+	}
 
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf("search err: %e with query: %s", err, query))
@@ -100,6 +104,8 @@ func (repo *SearchRepository) Search(ctx context.Context, query string, diet str
 	var response dao.ResponseElasticRecipeIndex
 
 	err = json.NewDecoder(res.Body).Decode(&response)
+
+	logger.Info(ctx, fmt.Sprintf("search result: %v", response))
 
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf("response decode error: %e with query: %s", err, query))

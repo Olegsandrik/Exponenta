@@ -111,6 +111,16 @@ const (
 	my recipe with my promise. Send me only json of my new recipe.`
 )
 
+type Key struct {
+	Value  string
+	IsUsed bool
+}
+
+type KeysPool struct {
+	Keys []Key
+	Mu   sync.Mutex
+}
+
 type GeneratedRecipeRepo struct {
 	storage  *postgres.Adapter
 	config   *config.Config
@@ -130,6 +140,40 @@ func NewGeneratedRecipeRepo(storage *postgres.Adapter, config *config.Config) *G
 		config:   config,
 		keysPool: keysPool,
 	}
+}
+
+func NewKeysPool(Keys []string) *KeysPool {
+	keys := make([]Key, 0, len(Keys))
+
+	for _, key := range Keys {
+		keys = append(keys, Key{Value: key, IsUsed: false})
+	}
+
+	return &KeysPool{
+		Keys: keys,
+		Mu:   sync.Mutex{},
+	}
+}
+
+func (repo *GeneratedRecipeRepo) RefreshKeyByID(ID int) {
+	repo.keysPool.Mu.Lock()
+	defer repo.keysPool.Mu.Unlock()
+	repo.keysPool.Keys[ID].IsUsed = false
+}
+
+func (repo *GeneratedRecipeRepo) GetKey() (string, int, error) {
+	repo.keysPool.Mu.Lock()
+	defer repo.keysPool.Mu.Unlock()
+
+	for idx := range repo.keysPool.Keys {
+		if !repo.keysPool.Keys[idx].IsUsed {
+			repo.keysPool.Keys[idx].IsUsed = true
+			return repo.keysPool.Keys[idx].Value, idx, nil
+		}
+	}
+
+	return "", 0, repoErrors.ErrAllKeysAreUsing
+
 }
 
 func (repo *GeneratedRecipeRepo) GetAllRecipes(ctx context.Context, num int,
@@ -202,7 +246,7 @@ func (repo *GeneratedRecipeRepo) GetRecipeByID(ctx context.Context, recipeID int
 
 func (repo *GeneratedRecipeRepo) GetHistoryByID(ctx context.Context, recipeID int,
 	userID uint) ([]models.RecipeModel, error) {
-	q := `SELECT r.id, r.version, r.name, r.description, r.steps, r.dish_types, r.diets, r.servings, r.total_steps, 
+	q := `SELECT r.id, r.ready_in_minutes, r.version, r.name, r.description, r.steps, r.dish_types, r.diets, r.servings, r.total_steps, 
        r.query FROM public.generated_recipes_versions as r WHERE user_id = $1 AND id = $2`
 
 	var recipeRows []dao.RecipeTable
@@ -543,48 +587,4 @@ func (repo *GeneratedRecipeRepo) SetNewMainVersion(ctx context.Context, recipeID
 	}
 
 	return nil
-}
-
-func (repo *GeneratedRecipeRepo) RefreshKeyByID(ID int) {
-	repo.keysPool.Mu.Lock()
-	defer repo.keysPool.Mu.Unlock()
-	repo.keysPool.Keys[ID].IsUsed = false
-}
-
-func (repo *GeneratedRecipeRepo) GetKey() (string, int, error) {
-	repo.keysPool.Mu.Lock()
-	defer repo.keysPool.Mu.Unlock()
-
-	for idx := range repo.keysPool.Keys {
-		if !repo.keysPool.Keys[idx].IsUsed {
-			repo.keysPool.Keys[idx].IsUsed = true
-			return repo.keysPool.Keys[idx].Value, idx, nil
-		}
-	}
-
-	return "", 0, repoErrors.ErrAllKeysAreUsing
-
-}
-
-type Key struct {
-	Value  string
-	IsUsed bool
-}
-
-type KeysPool struct {
-	Keys []Key
-	Mu   sync.Mutex
-}
-
-func NewKeysPool(Keys []string) *KeysPool {
-	keys := make([]Key, 0, len(Keys))
-
-	for _, key := range Keys {
-		keys = append(keys, Key{Value: key, IsUsed: false})
-	}
-
-	return &KeysPool{
-		Keys: keys,
-		Mu:   sync.Mutex{},
-	}
 }
