@@ -46,4 +46,5 @@ var (
 	ErrFailedToUnmarshalJSON          = fmt.Errorf("failed to unmarshal data")
 	ErrFailToCreateVKUser             = fmt.Errorf("fail to create vk user")
 	ErrUserNotAuth                    = fmt.Errorf("user not authenticated")
+	ErrAllKeysAreUsing                = fmt.Errorf("all keys are using")
 )

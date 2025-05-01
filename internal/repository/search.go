@@ -182,7 +182,7 @@ func (repo *SearchRepository) getFilter(ctx context.Context, filter string) ([]s
 	err := repo.AdapterPostgres.Select(ctx, &items, fmt.Sprintf(q, filter))
 
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("query err: %e with query: %s", err, q))
+		logger.Error(ctx, fmt.Sprintf("query err: %e with query: %s", err, fmt.Sprintf(q, filter)))
 		return nil, fmt.Errorf("err: %+v with filter: %s", repoErrors.ErrToGetFilterValues, filter)
 	}
 

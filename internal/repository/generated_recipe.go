@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/jmoiron/sqlx"
 
@@ -18,19 +19,116 @@ import (
 )
 
 const (
-	promptChoiceGeneration    = "Gen"
-	promptChoiceModernization = "Mod"
+	promptChoiceGeneration = `You are a professional chef assistant. Provide detailed cooking recipes in Russian with 
+	next json format. Send me only json od recipe.
+	"name": "str",
+	"description": "str",
+	"servingsNum": int,
+	"dishTypes": [
+		"str",
+		"str",
+	],
+	"diets": [
+		"str",
+		"str"
+	],
+	"ingredients": [
+		{
+			"id": 1, // 1... inf
+			"name": "str",
+			"image": "str",
+			"amount": 0.5,
+			"unit": "ч. л."
+		},
+		{
+			"id": 2,
+			"name": "chocolate",
+			"image": "milk-chocolate.jpg",
+			"amount": 8,
+			"unit": "унций"
+		}
+	],
+	"totalSteps": int, 
+	"readyInMinutes": int,
+	"steps": [
+		{
+			"number": int,
+			"step": "description movement step",
+			"ingredients": [
+				{
+					"name": "молотый эспрессо",
+					"localizedName": "молотый эспрессо"
+				},
+				{
+					"name": "взбитые сливки",
+					"localizedName": "взбитые сливки"
+					
+				}
+			],
+			"equipment": [
+				{
+					"name": "пергамент для выпечки",
+					"localizedName": "пергамент для выпечки",
+				},
+				{
+					"name": "водяная баня",
+					"localizedName": "водяная баня",
+				}
+			],
+			"length": {
+				"number": 5,
+				"unit": "минут"
+			}
+		},
+		{
+			"number": int,
+			"step": "description movement step",
+			"ingredients": [
+				{
+					"name": "молотый эспрессо",
+					"localizedName": "молотый эспрессо"
+				},
+				{
+					"name": "взбитые сливки",
+					"localizedName": "взбитые сливки"
+				}
+			],
+			"equipment": [
+				{
+					"name": "пергамент для выпечки",
+					"localizedName": "пергамент для выпечки",
+				},
+				{
+					"name": "водяная баня",
+					"localizedName": "водяная баня",
+				}
+			],
+		}
+	]
+	You must use products, that i will send you`
+
+	promptChoiceModernization = `You are a professional chef assistant. I will send you my recipe and you should reform
+	my recipe with my promise. Send me only json of my new recipe.`
 )
 
 type GeneratedRecipeRepo struct {
-	storage *postgres.Adapter
-	config  *config.Config
+	storage  *postgres.Adapter
+	config   *config.Config
+	keysPool *KeysPool
 }
 
 func NewGeneratedRecipeRepo(storage *postgres.Adapter, config *config.Config) *GeneratedRecipeRepo {
+	keysPool := NewKeysPool([]string{
+		config.DeepSeekAPIKey2,
+		config.DeepSeekAPIKey3,
+		config.DeepSeekAPIKey4,
+		config.DeepSeekAPIKey5,
+	})
+
 	return &GeneratedRecipeRepo{
-		storage: storage,
-		config:  config,
+		storage:  storage,
+		config:   config,
+		keysPool: keysPool,
 	}
 }
 
@@ -127,7 +225,14 @@ func (repo *GeneratedRecipeRepo) GetHistoryByID(ctx context.Context, recipeID in
 func (repo *GeneratedRecipeRepo) CreateRecipe(ctx context.Context, products []string, query string,
 	userID uint) ([]models.RecipeModel, error) {
 	APIURL := repo.config.DeepSeekAPIURL
-	APIKey := repo.config.DeepSeekAPIKey
+	APIKey, APIKeyID, err := repo.GetKey()
+
+	if err != nil {
+		logger.Error(ctx, fmt.Sprintf("no free keys now: %v", err))
+		return nil, err
+	}
+
+	defer repo.RefreshKeyByID(APIKeyID)
 
 	q := fmt.Sprintf("my promise: %s, products: %s", query, strings.Join(products, ", "))
 
@@ -281,7 +386,14 @@ func (repo *GeneratedRecipeRepo) insertGeneratedRecipe(ctx context.Context, quer
 func (repo *GeneratedRecipeRepo) UpdateRecipe(ctx context.Context, query string, recipeID int, versionID int,
 	userID uint) ([]models.RecipeModel, error) {
 	APIURL := repo.config.DeepSeekAPIURL
-	APIKey := repo.config.DeepSeekAPIKey
+	APIKey, APIKeyID, err := repo.GetKey()
+
+	if err != nil {
+		logger.Error(ctx, fmt.Sprintf("no free keys now"))
+		return nil, err
+	}
+
+	defer repo.RefreshKeyByID(APIKeyID)
 
 	recipeDao, err := repo.getRecipeByIDAndVersion(ctx, recipeID, userID, versionID)
 
@@ -431,4 +543,48 @@ func (repo *GeneratedRecipeRepo) SetNewMainVersion(ctx context.Context, recipeID
 	}
 
 	return nil
+}
+
+func (repo *GeneratedRecipeRepo) RefreshKeyByID(ID int) {
+	repo.keysPool.Mu.Lock()
+	defer repo.keysPool.Mu.Unlock()
+	repo.keysPool.Keys[ID].IsUsed = false
+}
+
+func (repo *GeneratedRecipeRepo) GetKey() (string, int, error) {
+	repo.keysPool.Mu.Lock()
+	defer repo.keysPool.Mu.Unlock()
+
+	for idx := range repo.keysPool.Keys {
+		if !repo.keysPool.Keys[idx].IsUsed {
+			repo.keysPool.Keys[idx].IsUsed = true
+			return repo.keysPool.Keys[idx].Value, idx, nil
+		}
+	}
+
+	return "", 0, repoErrors.ErrAllKeysAreUsing
+
+}
+
+type Key struct {
+	Value  string
+	IsUsed bool
+}
+
+type KeysPool struct {
+	Keys []Key
+	Mu   sync.Mutex
+}
+
+func NewKeysPool(Keys []string) *KeysPool {
+	keys := make([]Key, 0, len(Keys))
+
+	for _, key := range Keys {
+		keys = append(keys, Key{Value: key, IsUsed: false})
+	}
+
+	return &KeysPool{
+		Keys: keys,
+		Mu:   sync.Mutex{},
+	}
 }

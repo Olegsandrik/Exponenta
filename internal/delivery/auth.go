@@ -324,8 +324,8 @@ func (h *AuthHandler) EditLogin(w http.ResponseWriter, r *http.Request) {
 		} else if errors.As(err, &repoErrors.ErrLoginAlreadyUsed) {
 			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 				Status: http.StatusBadRequest,
-				Msg:    "new login is required",
-				MsgRus: "новый login не найден",
+				Msg:    "login is already used",
+				MsgRus: "этот логин использует другой пользователь",
 			})
 			return
 		} else {

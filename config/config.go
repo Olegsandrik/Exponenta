@@ -23,10 +23,12 @@ type Config struct {
 	PostgresConnIdleTime time.Duration
 
 	// Server
+
 	ServerTimeout time.Duration
 	Port          string
 
 	// Elasticsearch
+
 	ElasticsearchAddress  string
 	ElasticsearchUsername string
 	ElasticsearchPassword string
@@ -40,8 +42,12 @@ type Config struct {
 
 	// Deepseek
 
-	DeepSeekAPIURL string
-	DeepSeekAPIKey string
+	DeepSeekAPIURL  string
+	DeepSeekAPIKey  string
+	DeepSeekAPIKey2 string
+	DeepSeekAPIKey3 string
+	DeepSeekAPIKey4 string
+	DeepSeekAPIKey5 string
 
 	// Redis
 
@@ -84,8 +90,12 @@ func NewConfig() *Config {
 		MinioEndpoint: getEnvStr("MINIO_ENDPOINT", ""),
 		MinioBucket:   getEnvStr("MINIO_BUCKET_NAME", ""),
 
-		DeepSeekAPIURL: getEnvStr("DEEP_SEEK_API_URL", ""),
-		DeepSeekAPIKey: getEnvStr("DEEP_SEEK_API_KEY", ""),
+		DeepSeekAPIURL:  getEnvStr("DEEP_SEEK_API_URL", ""),
+		DeepSeekAPIKey:  getEnvStr("DEEP_SEEK_API_KEY", ""),
+		DeepSeekAPIKey2: getEnvStr("DEEP_SEEK_API_KEY_2", ""),
+		DeepSeekAPIKey3: getEnvStr("DEEP_SEEK_API_KEY_3", ""),
+		DeepSeekAPIKey4: getEnvStr("DEEP_SEEK_API_KEY_4", ""),
+		DeepSeekAPIKey5: getEnvStr("DEEP_SEEK_API_KEY_5", ""),
 
 		RedisURL:      getEnvStr("REDIS_URL", ""),
 		RedisPassword: getEnvStr("REDIS_USER_PASSWORD", ""),
