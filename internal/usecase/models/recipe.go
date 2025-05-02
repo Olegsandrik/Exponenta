@@ -7,19 +7,20 @@ import (
 )
 
 type RecipeModel struct {
-	ID          int
-	Name        string
-	Desc        string
-	Img         string
-	CookingTime int
-	ServingsNum int
-	DishTypes   string
-	Diets       string
-	Ingredients []byte
-	HealthScore int
-	Steps       string
-	Version     int
-	Query       string
+	ID              int
+	Name            string
+	Desc            string
+	Img             string
+	CookingTime     int
+	ServingsNum     int
+	DishTypes       string
+	Diets           string
+	Ingredients     []byte
+	HealthScore     int
+	Steps           string
+	Version         int
+	Query           string
+	UserIngredients string
 }
 
 type CurrentRecipeModel struct {
@@ -112,19 +113,20 @@ func ConvertRecipeToDto(rm []RecipeModel) []dto.RecipeDto {
 	RecipeItems := make([]dto.RecipeDto, 0, len(rm))
 	for _, r := range rm {
 		RecipeItems = append(RecipeItems, dto.RecipeDto{
-			ID:          r.ID,
-			Img:         r.Img,
-			Desc:        r.Desc,
-			Name:        r.Name,
-			CookingTime: r.CookingTime,
-			ServingsNum: r.ServingsNum,
-			Steps:       json.RawMessage(r.Steps),
-			Diets:       json.RawMessage(r.Diets),
-			DishTypes:   json.RawMessage(r.DishTypes),
-			HealthScore: r.HealthScore,
-			Ingredients: r.Ingredients,
-			Version:     r.Version,
-			Query:       r.Query,
+			ID:              r.ID,
+			Img:             r.Img,
+			Desc:            r.Desc,
+			Name:            r.Name,
+			CookingTime:     r.CookingTime,
+			ServingsNum:     r.ServingsNum,
+			Steps:           json.RawMessage(r.Steps),
+			Diets:           json.RawMessage(r.Diets),
+			DishTypes:       json.RawMessage(r.DishTypes),
+			HealthScore:     r.HealthScore,
+			Ingredients:     r.Ingredients,
+			Version:         r.Version,
+			Query:           r.Query,
+			UserIngredients: json.RawMessage(r.UserIngredients),
 		})
 	}
 	return RecipeItems

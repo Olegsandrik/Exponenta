@@ -11,20 +11,21 @@ import (
 )
 
 type RecipeTable struct {
-	ID          int             `db:"id" json:"id,omitempty"`
-	Name        string          `db:"name" json:"name,omitempty"`
-	Desc        string          `db:"description" json:"description,omitempty"`
-	Img         string          `db:"image" json:"image,omitempty"`
-	CookingTime int             `db:"ready_in_minutes" json:"cookingTime,omitempty"`
-	ServingsNum int             `db:"servings" json:"servingsNum,omitempty"`
-	Steps       string          `db:"steps" json:"steps,omitempty"`
-	DishTypes   json.RawMessage `db:"dish_types" json:"dishTypes,omitempty"`
-	Diets       json.RawMessage `db:"diets" json:"diets,omitempty"`
-	HealthScore int             `db:"healthscore" json:"healthscore,omitempty"`
-	TotalSteps  int             `db:"total_steps" json:"totalSteps,omitempty"`
-	Ingredients json.RawMessage `db:"ingredients" json:"ingredients,omitempty"`
-	Version     int             `db:"version" json:"version,omitempty"`
-	Query       string          `db:"query" json:"query,omitempty"`
+	ID              int             `db:"id" json:"id,omitempty"`
+	Name            string          `db:"name" json:"name,omitempty"`
+	Desc            string          `db:"description" json:"description,omitempty"`
+	Img             string          `db:"image" json:"image,omitempty"`
+	CookingTime     int             `db:"ready_in_minutes" json:"cookingTime,omitempty"`
+	ServingsNum     int             `db:"servings" json:"servingsNum,omitempty"`
+	Steps           string          `db:"steps" json:"steps,omitempty"`
+	DishTypes       json.RawMessage `db:"dish_types" json:"dishTypes,omitempty"`
+	Diets           json.RawMessage `db:"diets" json:"diets,omitempty"`
+	HealthScore     int             `db:"healthscore" json:"healthscore,omitempty"`
+	TotalSteps      int             `db:"total_steps" json:"totalSteps,omitempty"`
+	Ingredients     json.RawMessage `db:"ingredients" json:"ingredients,omitempty"`
+	Version         int             `db:"version" json:"version,omitempty"`
+	Query           string          `db:"query" json:"query,omitempty"`
+	UserIngredients json.RawMessage `db:"user_ingredients" json:"user_ingredients,omitempty"`
 }
 
 type CurrentRecipeTable struct {
@@ -66,18 +67,19 @@ type IngredientTable struct {
 }
 
 type GeneratedRecipe struct {
-	Version        int `json:"version"`
-	ID             int
-	Name           string          `db:"name" json:"name"`
-	Desc           string          `db:"description" json:"description"`
-	ServingsNum    int             `db:"servings" json:"servingsNum"`
-	TotalSteps     int             `db:"total_steps" json:"totalSteps"`
-	ReadyInMinutes int             `db:"ready_in_minutes" json:"readyInMinutes"`
-	Ingredients    json.RawMessage `db:"ingredients" json:"ingredients"`
-	Steps          json.RawMessage `db:"steps" json:"steps"`
-	DishTypes      json.RawMessage `db:"dish_types" json:"dishTypes"`
-	Diets          json.RawMessage `db:"diets" json:"diets"`
-	Query          string
+	Version         int `json:"version"`
+	ID              int
+	Name            string          `db:"name" json:"name"`
+	Desc            string          `db:"description" json:"description"`
+	ServingsNum     int             `db:"servings" json:"servingsNum"`
+	TotalSteps      int             `db:"total_steps" json:"totalSteps"`
+	ReadyInMinutes  int             `db:"ready_in_minutes" json:"readyInMinutes"`
+	Ingredients     json.RawMessage `db:"ingredients" json:"ingredients"`
+	Steps           json.RawMessage `db:"steps" json:"steps"`
+	DishTypes       json.RawMessage `db:"dish_types" json:"dishTypes"`
+	Diets           json.RawMessage `db:"diets" json:"diets"`
+	Query           string
+	UserIngredients json.RawMessage `db:"user_ingredients" json:"user_ingredient"`
 }
 
 func ConvertTimerToDAO(tt []TimerTable) ([]models.TimerRecipeModel, error) {
@@ -184,17 +186,20 @@ func ConvertGenRecipeToRecipeModel(rt []RecipeTable) []models.RecipeModel {
 	RecipeItems := make([]models.RecipeModel, 0, len(rt))
 	for _, r := range rt {
 		RecipeItems = append(RecipeItems, models.RecipeModel{
-			ID:          r.ID,
-			Name:        r.Name,
-			Desc:        r.Desc,
-			Img:         r.Img,
-			CookingTime: r.CookingTime,
-			ServingsNum: r.ServingsNum,
-			Steps:       r.Steps,
-			HealthScore: r.HealthScore,
-			Diets:       string(r.Diets),
-			DishTypes:   string(r.DishTypes),
-			Ingredients: r.Ingredients,
+			ID:              r.ID,
+			Name:            r.Name,
+			Desc:            r.Desc,
+			Img:             r.Img,
+			CookingTime:     r.CookingTime,
+			ServingsNum:     r.ServingsNum,
+			Steps:           r.Steps,
+			HealthScore:     r.HealthScore,
+			Diets:           string(r.Diets),
+			DishTypes:       string(r.DishTypes),
+			Ingredients:     r.Ingredients,
+			Query:           r.Query,
+			Version:         r.Version,
+			UserIngredients: string(r.UserIngredients),
 		})
 	}
 	return RecipeItems
@@ -226,16 +231,17 @@ func ConvertGeneratedRecipeToRecipeModels(gr []GeneratedRecipe) []models.RecipeM
 	RecipeItems := make([]models.RecipeModel, 0, len(gr))
 	for _, recipe := range gr {
 		RecipeItems = append(RecipeItems, models.RecipeModel{
-			ID:          recipe.ID,
-			Name:        recipe.Name,
-			Desc:        recipe.Desc,
-			ServingsNum: recipe.ServingsNum,
-			Steps:       string(recipe.Steps),
-			DishTypes:   string(recipe.DishTypes),
-			Diets:       string(recipe.Diets),
-			Ingredients: recipe.Ingredients,
-			Version:     recipe.Version,
-			Query:       recipe.Query,
+			ID:              recipe.ID,
+			Name:            recipe.Name,
+			Desc:            recipe.Desc,
+			ServingsNum:     recipe.ServingsNum,
+			Steps:           string(recipe.Steps),
+			DishTypes:       string(recipe.DishTypes),
+			Diets:           string(recipe.Diets),
+			Ingredients:     recipe.Ingredients,
+			Version:         recipe.Version,
+			Query:           recipe.Query,
+			UserIngredients: string(recipe.UserIngredients),
 		})
 	}
 	return RecipeItems

@@ -42,7 +42,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 2048m
+          memory: 3G
 
   minio:
     image: 'minio/minio'

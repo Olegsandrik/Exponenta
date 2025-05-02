@@ -6,19 +6,20 @@ import (
 )
 
 type RecipeDto struct {
-	ID          int             `json:"id,omitempty"`
-	Version     int             `json:"version,omitempty"`
-	Name        string          `json:"name,omitempty"`
-	Desc        string          `json:"description,omitempty"`
-	Img         string          `json:"img,omitempty"`
-	CookingTime int             `json:"cookingTimeMinutes,omitempty"`
-	ServingsNum int             `json:"servingsNum,omitempty"`
-	DishTypes   json.RawMessage `json:"dishTypes,omitempty"`
-	Diets       json.RawMessage `json:"diets,omitempty"`
-	HealthScore int             `json:"healthScore,omitempty"`
-	Ingredients json.RawMessage `json:"ingredients,omitempty"`
-	Steps       json.RawMessage `json:"steps,omitempty"`
-	Query       string          `json:"query,omitempty"`
+	ID              int             `json:"id,omitempty"`
+	Version         int             `json:"version,omitempty"`
+	Name            string          `json:"name,omitempty"`
+	Desc            string          `json:"description,omitempty"`
+	Img             string          `json:"img,omitempty"`
+	CookingTime     int             `json:"cookingTimeMinutes,omitempty"`
+	ServingsNum     int             `json:"servingsNum,omitempty"`
+	DishTypes       json.RawMessage `json:"dishTypes,omitempty"`
+	Diets           json.RawMessage `json:"diets,omitempty"`
+	HealthScore     int             `json:"healthScore,omitempty"`
+	Ingredients     json.RawMessage `json:"ingredients,omitempty"`
+	Steps           json.RawMessage `json:"steps,omitempty"`
+	Query           string          `json:"query,omitempty"`
+	UserIngredients json.RawMessage `json:"userIngredients,omitempty"`
 }
 
 type CurrentRecipeDto struct {

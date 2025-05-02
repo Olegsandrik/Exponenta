@@ -83,6 +83,13 @@ func (h *GeneratedHandler) GetAllGeneratedRecipes(w http.ResponseWriter, r *http
 				MsgRus: "пользователь не авторизован",
 			})
 			return
+		} else if errors.Is(err, repoErrors.ErrZeroRowsGet) {
+			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+				Status: http.StatusNotFound,
+				Msg:    repoErrors.ErrZeroRowsGet.Error(),
+				MsgRus: "на данный момент у вас нет сгенерированных рецептов",
+			})
+			return
 		}
 		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 			Status: http.StatusInternalServerError,
@@ -422,6 +429,12 @@ func (h *GeneratedHandler) SetNewMainVersionGeneratedRecipe(w http.ResponseWrite
 				MsgRus: "пользователь не авторизован",
 			})
 			return
+		} else if errors.Is(err, repoErrors.ErrVersionNotFound) {
+			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+				Status: http.StatusNotFound,
+				Msg:    repoErrors.ErrVersionNotFound.Error(),
+				MsgRus: "данной версии не существует",
+			})
 		}
 		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 			Status: http.StatusInternalServerError,

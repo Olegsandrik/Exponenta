@@ -193,7 +193,7 @@ func (repo *GeneratedRecipeRepo) GetAllRecipes(ctx context.Context, num int,
 
 	if len(recipeItems) == 0 {
 		logger.Error(ctx, fmt.Sprintf("error getting recipe zero row with num: %d", num))
-		return nil, repoErrors.ErrFailToGetRecipes
+		return nil, repoErrors.ErrZeroRowsGet
 	}
 
 	logger.Info(ctx, fmt.Sprintf("select %d recipes", len(recipeRows)))
@@ -219,8 +219,8 @@ func (repo *GeneratedRecipeRepo) getRecipeByIDAndVersion(ctx context.Context, re
 
 func (repo *GeneratedRecipeRepo) GetRecipeByID(ctx context.Context, recipeID int,
 	userID uint) ([]models.RecipeModel, error) {
-	q := `SELECT r.name, r.description, r.ingredients, r.steps, r.dish_types, r.diets, r.servings, r.ready_in_minutes
-			FROM public.generated_recipes as r WHERE r.user_id = $1 AND r.id = $2`
+	q := `SELECT r.name, r.version, r.user_ingredients, r.query, r.description, r.ingredients, r.steps, r.dish_types, r.diets, r.servings, 
+       r.ready_in_minutes FROM public.generated_recipes as r WHERE r.user_id = $1 AND r.id = $2`
 
 	recipeRows := make([]dao.RecipeTable, 0, 1)
 
@@ -293,6 +293,8 @@ func (repo *GeneratedRecipeRepo) CreateRecipe(ctx context.Context, products []st
 	generatedRecipe, err := dao.ParseGeneratedRecipe(json.RawMessage(respData))
 
 	generatedRecipe.Query = query
+	jsonProducts, _ := json.Marshal(products)
+	generatedRecipe.UserIngredients = jsonProducts
 
 	if err != nil {
 		logger.Error(ctx,
@@ -404,8 +406,9 @@ func (repo *GeneratedRecipeRepo) insertGeneratedRecipe(ctx context.Context, quer
 	generatedRecipe dao.GeneratedRecipe, userID uint) (int, error) {
 	var generateRecipeID int
 	q := `INSERT INTO public.generated_recipes (
-    user_id,name,description,dish_types,servings, diets, ingredients, ready_in_minutes, steps, total_steps, query)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`
+    user_id,name,description,dish_types,servings, diets, ingredients, ready_in_minutes, steps, total_steps, query, 
+                                      user_ingredients)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id`
 
 	err := queryer.QueryRowxContext(ctx, q,
 		userID,
@@ -418,7 +421,8 @@ func (repo *GeneratedRecipeRepo) insertGeneratedRecipe(ctx context.Context, quer
 		generatedRecipe.ReadyInMinutes,
 		generatedRecipe.Steps,
 		generatedRecipe.TotalSteps,
-		generatedRecipe.Query).Scan(&generateRecipeID)
+		generatedRecipe.Query,
+		generatedRecipe.UserIngredients).Scan(&generateRecipeID)
 
 	if err != nil {
 		return 0, err
@@ -505,7 +509,7 @@ func (repo *GeneratedRecipeRepo) UpdateRecipe(ctx context.Context, query string,
 
 func (repo *GeneratedRecipeRepo) GetVersionByID(ctx context.Context, userID uint,
 	recipeID int, versionID int) ([]dao.RecipeTable, error) {
-	q := `SELECT r.name, r.description, r.steps, r.ingredients, 
+	q := `SELECT r.name, r.query, r.description, r.steps, r.ingredients, 
        	  r.ready_in_minutes ,r.dish_types, r.diets, r.servings, r.total_steps
 		  FROM public.generated_recipes_versions as r WHERE user_id = $1 AND id = $2 AND version = $3`
 
@@ -522,6 +526,10 @@ func (repo *GeneratedRecipeRepo) GetVersionByID(ctx context.Context, userID uint
 func (repo *GeneratedRecipeRepo) SetNewMainVersion(ctx context.Context, recipeID int,
 	versionID int, userID uint) error {
 	recipeRows, err := repo.GetVersionByID(ctx, userID, recipeID, versionID)
+
+	if len(recipeRows) == 0 {
+		return repoErrors.ErrVersionNotFound
+	}
 
 	if err != nil {
 		logger.Error(ctx,
@@ -540,8 +548,9 @@ func (repo *GeneratedRecipeRepo) SetNewMainVersion(ctx context.Context, recipeID
 			 ingredients = $6,
 			 ready_in_minutes = $7,
 			 steps = $8,
-			 total_steps = $9
-		 WHERE user_id = $10 AND id = $11`
+			 total_steps = $9,
+             version = $10
+		 WHERE user_id = $11 AND id = $12`
 
 	result, err := repo.storage.Exec(ctx, q,
 		recipeRows[0].Name,
@@ -553,6 +562,7 @@ func (repo *GeneratedRecipeRepo) SetNewMainVersion(ctx context.Context, recipeID
 		recipeRows[0].CookingTime,
 		recipeRows[0].Steps,
 		recipeRows[0].TotalSteps,
+		versionID,
 		userID,
 		recipeID,
 	)
