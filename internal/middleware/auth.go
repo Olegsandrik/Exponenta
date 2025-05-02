@@ -2,11 +2,10 @@ package middleware
 
 import (
 	"context"
+	"github.com/Olegsandrik/Exponenta/internal/utils"
 	"net/http"
 
 	"github.com/gorilla/mux"
-
-	"github.com/Olegsandrik/Exponenta/utils"
 )
 
 type RedisAdapter interface {

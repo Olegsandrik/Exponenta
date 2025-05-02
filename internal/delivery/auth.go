@@ -3,14 +3,13 @@ package delivery
 import (
 	"context"
 	"errors"
-	"github.com/Olegsandrik/Exponenta/internal/repository/repoErrors"
+	internalErrors "github.com/Olegsandrik/Exponenta/internal/errors"
+	utils2 "github.com/Olegsandrik/Exponenta/internal/utils"
 	"net/http"
 
 	"github.com/gorilla/mux"
 
 	"github.com/Olegsandrik/Exponenta/internal/delivery/dto"
-	"github.com/Olegsandrik/Exponenta/internal/usecase/usecaseErrors"
-	"github.com/Olegsandrik/Exponenta/utils"
 )
 
 type AuthUsecase interface {
@@ -67,7 +66,7 @@ func (h *AuthHandler) Signup(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	signupData, err := dto.GetSignupData(r)
 	if err != nil {
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		utils2.JSONResponse(ctx, w, 200, utils2.ErrResponse{
 			Status: http.StatusBadRequest,
 			Msg:    "invalid signup data",
 			MsgRus: "некорректные данные регистрации",
@@ -77,23 +76,38 @@ func (h *AuthHandler) Signup(w http.ResponseWriter, r *http.Request) {
 
 	_, sID, err := h.authUsecase.SignUp(ctx, signupData)
 	if err != nil {
-		if errors.Is(err, repoErrors.ErrUserWithThisLoginAlreadyExists) {
-			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		if errors.Is(err, internalErrors.ErrUserWithThisLoginAlreadyExists) {
+			utils2.JSONResponse(ctx, w, 200, utils2.ErrResponse{
 				Status: http.StatusBadRequest,
 				Msg:    err.Error(),
 				MsgRus: "пользователь с таким логином уже существует",
 			})
 			return
-		} else if errors.Is(err, usecaseErrors.ErrTooEasyPassword) {
-			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
+		} else if errors.Is(err, internalErrors.ErrTooEasyPassword) {
+			utils2.JSONResponse(ctx, w, http.StatusOK, utils2.ErrResponse{
 				Status: http.StatusBadRequest,
 				Msg:    "password is too easy",
 				MsgRus: "пароль должен иметь длину не менее 8 символов, а также " +
 					"содержать не менее 2 спецсимволов (!@#$&*)",
 			})
 			return
+		} else if errors.Is(err, internalErrors.ErrTooShortUsername) {
+			utils2.JSONResponse(ctx, w, http.StatusOK, utils2.ErrResponse{
+				Status: http.StatusBadRequest,
+				Msg:    internalErrors.ErrTooShortUsername.Error(),
+				MsgRus: "имя пользователя должно содержать от 2 до 25 символов",
+			})
+			return
+		} else if errors.Is(err, internalErrors.ErrTooShortSurname) {
+			utils2.JSONResponse(ctx, w, http.StatusOK, utils2.ErrResponse{
+				Status: http.StatusBadRequest,
+				Msg:    internalErrors.ErrTooShortSurname.Error(),
+				MsgRus: "фамилия пользователя должна содержать от 2 до 25 символов",
+			})
+			return
 		}
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+
+		utils2.JSONResponse(ctx, w, 200, utils2.ErrResponse{
 			Status: http.StatusInternalServerError,
 			Msg:    err.Error(),
 			MsgRus: "не получилось зарегистрироваться",
@@ -112,7 +126,7 @@ func (h *AuthHandler) Signup(w http.ResponseWriter, r *http.Request) {
 
 	http.SetCookie(w, &cookie)
 
-	utils.JSONResponse(ctx, w, 200, utils.SuccessResponse{
+	utils2.JSONResponse(ctx, w, 200, utils2.SuccessResponse{
 		Status: http.StatusOK,
 		Data:   nil,
 	})
@@ -122,7 +136,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	loginData, err := dto.GetLoginData(r)
 	if err != nil {
-		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
+		utils2.JSONResponse(ctx, w, http.StatusOK, utils2.ErrResponse{
 			Status: http.StatusBadRequest,
 			Msg:    "invalid login data",
 			MsgRus: "некорректные данные для авторизации",
@@ -132,22 +146,22 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	sID, err := h.authUsecase.Login(ctx, loginData.Login, loginData.Password)
 	if err != nil {
-		if errors.Is(err, repoErrors.ErrFailToGetUser) {
-			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		if errors.Is(err, internalErrors.ErrFailToGetUser) {
+			utils2.JSONResponse(ctx, w, 200, utils2.ErrResponse{
 				Status: http.StatusBadRequest,
 				Msg:    err.Error(),
 				MsgRus: "пользователя с таким логином не существует",
 			})
 			return
-		} else if errors.Is(err, usecaseErrors.ErrInvalidPassword) {
-			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		} else if errors.Is(err, internalErrors.ErrInvalidPassword) {
+			utils2.JSONResponse(ctx, w, 200, utils2.ErrResponse{
 				Status: http.StatusBadRequest,
 				Msg:    err.Error(),
 				MsgRus: "неверный пароль для данного логина",
 			})
 			return
 		}
-		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
+		utils2.JSONResponse(ctx, w, http.StatusOK, utils2.ErrResponse{
 			Status: http.StatusInternalServerError,
 			Msg:    err.Error(),
 			MsgRus: "не получилось авторизоваться",
@@ -166,7 +180,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	http.SetCookie(w, &cookie)
 
-	utils.JSONResponse(ctx, w, http.StatusOK, utils.SuccessResponse{
+	utils2.JSONResponse(ctx, w, http.StatusOK, utils2.SuccessResponse{
 		Status: http.StatusOK,
 		Data:   nil,
 	})
@@ -177,14 +191,14 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("session_id")
 	if err != nil {
 		if errors.Is(err, http.ErrNoCookie) {
-			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
+			utils2.JSONResponse(ctx, w, http.StatusOK, utils2.ErrResponse{
 				Status: http.StatusUnauthorized,
 				Msg:    "user not authenticated",
 				MsgRus: "пользователь не авторизован",
 			})
 			return
 		}
-		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
+		utils2.JSONResponse(ctx, w, http.StatusOK, utils2.ErrResponse{
 			Status: http.StatusUnauthorized,
 			Msg:    "failed to get cookie",
 			MsgRus: "ошибка получения cookie",
@@ -194,7 +208,7 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 
 	ok := h.authUsecase.IsLoggedIn(ctx, cookie.Value)
 	if !ok {
-		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
+		utils2.JSONResponse(ctx, w, http.StatusOK, utils2.ErrResponse{
 			Status: http.StatusUnauthorized,
 			Msg:    "user not authenticated",
 			MsgRus: "пользователь не авторизован",
@@ -204,7 +218,7 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 
 	err = h.authUsecase.Logout(ctx, cookie.Value)
 	if err != nil {
-		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
+		utils2.JSONResponse(ctx, w, http.StatusOK, utils2.ErrResponse{
 			Status: http.StatusInternalServerError,
 			Msg:    err.Error(),
 			MsgRus: "не получилось выйти из аккаунта",
@@ -212,7 +226,7 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	utils.JSONResponse(ctx, w, http.StatusOK, utils.SuccessResponse{
+	utils2.JSONResponse(ctx, w, http.StatusOK, utils2.SuccessResponse{
 		Status: http.StatusOK,
 		Data:   nil,
 	})
@@ -220,9 +234,9 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 
 func (h *AuthHandler) Profile(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	uID, err := utils.GetUserIDFromContext(ctx)
+	uID, err := utils2.GetUserIDFromContext(ctx)
 	if err != nil {
-		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
+		utils2.JSONResponse(ctx, w, http.StatusOK, utils2.ErrResponse{
 			Status: http.StatusUnauthorized,
 			Msg:    "user not authenticated",
 			MsgRus: "пользователь не авторизован",
@@ -232,7 +246,7 @@ func (h *AuthHandler) Profile(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.authUsecase.GetUserByID(ctx, uID)
 	if err != nil {
-		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
+		utils2.JSONResponse(ctx, w, http.StatusOK, utils2.ErrResponse{
 			Status: http.StatusUnauthorized,
 			Msg:    err.Error(),
 			MsgRus: "не получилось найти профиль пользователя",
@@ -245,7 +259,7 @@ func (h *AuthHandler) Profile(w http.ResponseWriter, r *http.Request) {
 	if !user.IsVKUser {
 		login, err := h.authUsecase.GetUserLoginByID(ctx, uID)
 		if err != nil {
-			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
+			utils2.JSONResponse(ctx, w, http.StatusOK, utils2.ErrResponse{
 				Status: http.StatusInternalServerError,
 				Msg:    err.Error(),
 				MsgRus: "не получилось получить login пользователя",
@@ -255,7 +269,7 @@ func (h *AuthHandler) Profile(w http.ResponseWriter, r *http.Request) {
 		user.Login = login
 	}
 
-	utils.JSONResponse(ctx, w, http.StatusOK, utils.SuccessResponse{
+	utils2.JSONResponse(ctx, w, http.StatusOK, utils2.SuccessResponse{
 		Status: http.StatusOK,
 		Data:   user,
 	})
@@ -263,10 +277,10 @@ func (h *AuthHandler) Profile(w http.ResponseWriter, r *http.Request) {
 
 func (h *AuthHandler) EditName(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	uID, err := utils.GetUserIDFromContext(ctx)
+	uID, err := utils2.GetUserIDFromContext(ctx)
 
 	if err != nil {
-		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
+		utils2.JSONResponse(ctx, w, http.StatusOK, utils2.ErrResponse{
 			Status: http.StatusUnauthorized,
 			Msg:    "user not authenticated",
 			MsgRus: "пользователь не авторизован",
@@ -277,7 +291,7 @@ func (h *AuthHandler) EditName(w http.ResponseWriter, r *http.Request) {
 	editData, err := dto.GetEditData(r)
 
 	if err != nil {
-		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
+		utils2.JSONResponse(ctx, w, http.StatusOK, utils2.ErrResponse{
 			Status: http.StatusBadRequest,
 			Msg:    "invalid edit data",
 			MsgRus: "некорректные данные для обновления",
@@ -287,15 +301,22 @@ func (h *AuthHandler) EditName(w http.ResponseWriter, r *http.Request) {
 
 	err = h.authUsecase.UpdateUserName(ctx, uID, editData.NewName)
 	if err != nil {
-		if errors.Is(err, usecaseErrors.ErrEmptyName) {
-			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
+		if errors.Is(err, internalErrors.ErrEmptyName) {
+			utils2.JSONResponse(ctx, w, http.StatusOK, utils2.ErrResponse{
 				Status: http.StatusBadRequest,
 				Msg:    "new name is required",
 				MsgRus: "новое имя не найдено",
 			})
 			return
+		} else if errors.Is(err, internalErrors.ErrTooShortUsername) {
+			utils2.JSONResponse(ctx, w, http.StatusOK, utils2.ErrResponse{
+				Status: http.StatusBadRequest,
+				Msg:    "new name is too short",
+				MsgRus: "новое имя должно содержать от 2 до 25 символов",
+			})
+			return
 		}
-		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
+		utils2.JSONResponse(ctx, w, http.StatusOK, utils2.ErrResponse{
 			Status: http.StatusInternalServerError,
 			Msg:    err.Error(),
 			MsgRus: "не получилось обновить данные пользователя",
@@ -303,7 +324,7 @@ func (h *AuthHandler) EditName(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	utils.JSONResponse(ctx, w, http.StatusOK, utils.SuccessResponse{
+	utils2.JSONResponse(ctx, w, http.StatusOK, utils2.SuccessResponse{
 		Status: http.StatusOK,
 		Data:   nil,
 	})
@@ -311,10 +332,10 @@ func (h *AuthHandler) EditName(w http.ResponseWriter, r *http.Request) {
 
 func (h *AuthHandler) EditLogin(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	uID, err := utils.GetUserIDFromContext(ctx)
+	uID, err := utils2.GetUserIDFromContext(ctx)
 
 	if err != nil {
-		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
+		utils2.JSONResponse(ctx, w, http.StatusOK, utils2.ErrResponse{
 			Status: http.StatusUnauthorized,
 			Msg:    "user not authenticated",
 			MsgRus: "пользователь не авторизован",
@@ -324,7 +345,7 @@ func (h *AuthHandler) EditLogin(w http.ResponseWriter, r *http.Request) {
 
 	ok := h.authUsecase.IsVKUser(ctx, uID)
 	if ok {
-		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
+		utils2.JSONResponse(ctx, w, http.StatusOK, utils2.ErrResponse{
 			Status: http.StatusBadRequest,
 			Msg:    "VK user can not edit login",
 			MsgRus: "пользователь VK не может менять login",
@@ -335,7 +356,7 @@ func (h *AuthHandler) EditLogin(w http.ResponseWriter, r *http.Request) {
 	editData, err := dto.GetEditData(r)
 
 	if err != nil {
-		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
+		utils2.JSONResponse(ctx, w, http.StatusOK, utils2.ErrResponse{
 			Status: http.StatusBadRequest,
 			Msg:    "invalid edit data",
 			MsgRus: "некорректные данные для обновления",
@@ -345,22 +366,22 @@ func (h *AuthHandler) EditLogin(w http.ResponseWriter, r *http.Request) {
 
 	err = h.authUsecase.UpdateUserLogin(ctx, uID, editData.NewLogin)
 	if err != nil {
-		if errors.Is(err, usecaseErrors.ErrEmptyLogin) {
-			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
+		if errors.Is(err, internalErrors.ErrEmptyLogin) {
+			utils2.JSONResponse(ctx, w, http.StatusOK, utils2.ErrResponse{
 				Status: http.StatusBadRequest,
 				Msg:    "new login is required",
 				MsgRus: "новый login не найден",
 			})
 			return
-		} else if errors.Is(err, repoErrors.ErrLoginAlreadyUsed) {
-			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
+		} else if errors.Is(err, internalErrors.ErrLoginAlreadyUsed) {
+			utils2.JSONResponse(ctx, w, http.StatusOK, utils2.ErrResponse{
 				Status: http.StatusBadRequest,
 				Msg:    "login is already used",
 				MsgRus: "этот логин использует другой пользователь",
 			})
 			return
 		} else {
-			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
+			utils2.JSONResponse(ctx, w, http.StatusOK, utils2.ErrResponse{
 				Status: http.StatusInternalServerError,
 				Msg:    err.Error(),
 				MsgRus: "не получилось обновить данные пользователя",
@@ -370,7 +391,7 @@ func (h *AuthHandler) EditLogin(w http.ResponseWriter, r *http.Request) {
 
 	}
 
-	utils.JSONResponse(ctx, w, http.StatusOK, utils.SuccessResponse{
+	utils2.JSONResponse(ctx, w, http.StatusOK, utils2.SuccessResponse{
 		Status: http.StatusOK,
 		Data:   nil,
 	})
@@ -378,10 +399,10 @@ func (h *AuthHandler) EditLogin(w http.ResponseWriter, r *http.Request) {
 
 func (h *AuthHandler) EditSurname(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	uID, err := utils.GetUserIDFromContext(ctx)
+	uID, err := utils2.GetUserIDFromContext(ctx)
 
 	if err != nil {
-		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
+		utils2.JSONResponse(ctx, w, http.StatusOK, utils2.ErrResponse{
 			Status: http.StatusUnauthorized,
 			Msg:    "user not authenticated",
 			MsgRus: "пользователь не авторизован",
@@ -392,7 +413,7 @@ func (h *AuthHandler) EditSurname(w http.ResponseWriter, r *http.Request) {
 	editData, err := dto.GetEditData(r)
 
 	if err != nil {
-		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
+		utils2.JSONResponse(ctx, w, http.StatusOK, utils2.ErrResponse{
 			Status: http.StatusBadRequest,
 			Msg:    "invalid edit data",
 			MsgRus: "некорректные данные для обновления",
@@ -402,15 +423,22 @@ func (h *AuthHandler) EditSurname(w http.ResponseWriter, r *http.Request) {
 
 	err = h.authUsecase.UpdateUserSurname(ctx, uID, editData.NewSurname)
 	if err != nil {
-		if errors.Is(err, usecaseErrors.ErrEmptySurname) {
-			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
+		if errors.Is(err, internalErrors.ErrEmptySurname) {
+			utils2.JSONResponse(ctx, w, http.StatusOK, utils2.ErrResponse{
 				Status: http.StatusBadRequest,
 				Msg:    "new surname is required",
 				MsgRus: "новая фамилия не найдена",
 			})
 			return
+		} else if errors.Is(err, internalErrors.ErrTooShortSurname) {
+			utils2.JSONResponse(ctx, w, http.StatusOK, utils2.ErrResponse{
+				Status: http.StatusBadRequest,
+				Msg:    "new surname is too short",
+				MsgRus: "новая фамилия должна содержать от 2 до 25 символов",
+			})
+			return
 		}
-		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
+		utils2.JSONResponse(ctx, w, http.StatusOK, utils2.ErrResponse{
 			Status: http.StatusInternalServerError,
 			Msg:    err.Error(),
 			MsgRus: "не получилось обновить данные пользователя",
@@ -418,7 +446,7 @@ func (h *AuthHandler) EditSurname(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	utils.JSONResponse(ctx, w, http.StatusOK, utils.SuccessResponse{
+	utils2.JSONResponse(ctx, w, http.StatusOK, utils2.SuccessResponse{
 		Status: http.StatusOK,
 		Data:   nil,
 	})
@@ -426,10 +454,10 @@ func (h *AuthHandler) EditSurname(w http.ResponseWriter, r *http.Request) {
 
 func (h *AuthHandler) EditPassword(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	uID, err := utils.GetUserIDFromContext(ctx)
+	uID, err := utils2.GetUserIDFromContext(ctx)
 
 	if err != nil {
-		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
+		utils2.JSONResponse(ctx, w, http.StatusOK, utils2.ErrResponse{
 			Status: http.StatusUnauthorized,
 			Msg:    "user not authenticated",
 			MsgRus: "пользователь не авторизован",
@@ -439,7 +467,7 @@ func (h *AuthHandler) EditPassword(w http.ResponseWriter, r *http.Request) {
 
 	ok := h.authUsecase.IsVKUser(ctx, uID)
 	if ok {
-		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
+		utils2.JSONResponse(ctx, w, http.StatusOK, utils2.ErrResponse{
 			Status: http.StatusBadRequest,
 			Msg:    "VK user can not edit password",
 			MsgRus: "пользователь VK не может менять password",
@@ -450,7 +478,7 @@ func (h *AuthHandler) EditPassword(w http.ResponseWriter, r *http.Request) {
 	editData, err := dto.GetEditData(r)
 
 	if err != nil {
-		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
+		utils2.JSONResponse(ctx, w, http.StatusOK, utils2.ErrResponse{
 			Status: http.StatusBadRequest,
 			Msg:    "invalid edit data",
 			MsgRus: "некорректные данные для обновления",
@@ -460,22 +488,22 @@ func (h *AuthHandler) EditPassword(w http.ResponseWriter, r *http.Request) {
 
 	err = h.authUsecase.UpdatePassword(ctx, uID, editData.Password, editData.NewPassword)
 	if err != nil {
-		if errors.Is(err, usecaseErrors.ErrEmptyPassword) {
-			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
+		if errors.Is(err, internalErrors.ErrEmptyPassword) {
+			utils2.JSONResponse(ctx, w, http.StatusOK, utils2.ErrResponse{
 				Status: http.StatusBadRequest,
 				Msg:    "new password or password is required",
 				MsgRus: "новый пароль не найден",
 			})
 			return
-		} else if errors.Is(err, usecaseErrors.ErrInvalidPassword) {
-			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
+		} else if errors.Is(err, internalErrors.ErrInvalidPassword) {
+			utils2.JSONResponse(ctx, w, http.StatusOK, utils2.ErrResponse{
 				Status: http.StatusBadRequest,
 				Msg:    "password is invalid",
 				MsgRus: "пароль некорректен",
 			})
 			return
-		} else if errors.Is(err, usecaseErrors.ErrTooEasyPassword) {
-			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
+		} else if errors.Is(err, internalErrors.ErrTooEasyPassword) {
+			utils2.JSONResponse(ctx, w, http.StatusOK, utils2.ErrResponse{
 				Status: http.StatusBadRequest,
 				Msg:    "new password is too easy",
 				MsgRus: "новый пароль должен иметь длину не менее 8 символов, а также " +
@@ -483,7 +511,7 @@ func (h *AuthHandler) EditPassword(w http.ResponseWriter, r *http.Request) {
 			})
 			return
 		}
-		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
+		utils2.JSONResponse(ctx, w, http.StatusOK, utils2.ErrResponse{
 			Status: http.StatusInternalServerError,
 			Msg:    err.Error(),
 			MsgRus: "не получилось обновить данные пользователя",
@@ -494,14 +522,14 @@ func (h *AuthHandler) EditPassword(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("session_id")
 	if err != nil {
 		if errors.Is(err, http.ErrNoCookie) {
-			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
+			utils2.JSONResponse(ctx, w, http.StatusOK, utils2.ErrResponse{
 				Status: http.StatusUnauthorized,
 				Msg:    "user not authenticated",
 				MsgRus: "пользователь не авторизован",
 			})
 			return
 		}
-		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
+		utils2.JSONResponse(ctx, w, http.StatusOK, utils2.ErrResponse{
 			Status: http.StatusUnauthorized,
 			Msg:    "failed to get cookie",
 			MsgRus: "ошибка получения cookie",
@@ -511,14 +539,14 @@ func (h *AuthHandler) EditPassword(w http.ResponseWriter, r *http.Request) {
 
 	err = h.authUsecase.Logout(ctx, cookie.Value)
 	if err != nil {
-		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
+		utils2.JSONResponse(ctx, w, http.StatusOK, utils2.ErrResponse{
 			Status: http.StatusInternalServerError,
 			Msg:    err.Error(),
 			MsgRus: "не получилось выйти из аккаунта пользователя",
 		})
 	}
 
-	utils.JSONResponse(ctx, w, http.StatusOK, utils.SuccessResponse{
+	utils2.JSONResponse(ctx, w, http.StatusOK, utils2.SuccessResponse{
 		Status: http.StatusOK,
 		Data:   nil,
 	})
@@ -526,9 +554,9 @@ func (h *AuthHandler) EditPassword(w http.ResponseWriter, r *http.Request) {
 
 func (h *AuthHandler) DeleteProfile(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	uID, err := utils.GetUserIDFromContext(ctx)
+	uID, err := utils2.GetUserIDFromContext(ctx)
 	if err != nil {
-		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
+		utils2.JSONResponse(ctx, w, http.StatusOK, utils2.ErrResponse{
 			Status: http.StatusUnauthorized,
 			Msg:    "user not authenticated",
 			MsgRus: "пользователь не авторизован",
@@ -538,14 +566,14 @@ func (h *AuthHandler) DeleteProfile(w http.ResponseWriter, r *http.Request) {
 
 	err = h.authUsecase.DeleteProfile(ctx, uID)
 	if err != nil {
-		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
+		utils2.JSONResponse(ctx, w, http.StatusOK, utils2.ErrResponse{
 			Status: http.StatusInternalServerError,
 			Msg:    err.Error(),
 			MsgRus: "не получилось удалить профиль пользователя",
 		})
 	}
 
-	utils.JSONResponse(ctx, w, http.StatusOK, utils.SuccessResponse{
+	utils2.JSONResponse(ctx, w, http.StatusOK, utils2.SuccessResponse{
 		Status: http.StatusOK,
 		Data:   nil,
 	})
@@ -555,7 +583,7 @@ func (h *AuthHandler) LoginWithVK(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	loginVKData, err := dto.GetLoginVKData(r)
 	if err != nil {
-		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
+		utils2.JSONResponse(ctx, w, http.StatusOK, utils2.ErrResponse{
 			Status: http.StatusBadRequest,
 			Msg:    "invalid request",
 			MsgRus: "некорректные данные для авторизации",
@@ -565,14 +593,14 @@ func (h *AuthHandler) LoginWithVK(w http.ResponseWriter, r *http.Request) {
 
 	sID, err := h.authUsecase.LoginVK(ctx, loginVKData)
 	if err != nil {
-		if errors.Is(err, usecaseErrors.ErrEmptyVKLoginData) {
-			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
+		if errors.Is(err, internalErrors.ErrEmptyVKLoginData) {
+			utils2.JSONResponse(ctx, w, http.StatusOK, utils2.ErrResponse{
 				Status: http.StatusBadRequest,
 				Msg:    "invalid request",
 				MsgRus: "некорректные данные для авторизации",
 			})
 		}
-		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
+		utils2.JSONResponse(ctx, w, http.StatusOK, utils2.ErrResponse{
 			Status: http.StatusInternalServerError,
 			Msg:    err.Error(),
 			MsgRus: "не получилось авторизоваться",
@@ -591,7 +619,7 @@ func (h *AuthHandler) LoginWithVK(w http.ResponseWriter, r *http.Request) {
 
 	http.SetCookie(w, &cookie)
 
-	utils.JSONResponse(ctx, w, http.StatusOK, utils.SuccessResponse{
+	utils2.JSONResponse(ctx, w, http.StatusOK, utils2.SuccessResponse{
 		Status: http.StatusOK,
 		Data:   nil,
 	})

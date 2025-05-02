@@ -3,14 +3,14 @@ package delivery
 import (
 	"context"
 	"errors"
+	internalErrors "github.com/Olegsandrik/Exponenta/internal/errors"
+	"github.com/Olegsandrik/Exponenta/internal/utils"
 	"net/http"
 	"strconv"
 
 	"github.com/gorilla/mux"
 
 	"github.com/Olegsandrik/Exponenta/internal/delivery/dto"
-	repoErrors "github.com/Olegsandrik/Exponenta/internal/repository/repoErrors"
-	"github.com/Olegsandrik/Exponenta/utils"
 )
 
 type GeneratedUsecase interface {
@@ -76,17 +76,17 @@ func (h *GeneratedHandler) GetAllGeneratedRecipes(w http.ResponseWriter, r *http
 
 	recipesData, err := h.usecase.GetAllRecipes(ctx, num)
 	if err != nil {
-		if errors.Is(err, repoErrors.ErrUserNotAuth) {
+		if errors.Is(err, internalErrors.ErrUserNotAuth) {
 			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 				Status: http.StatusUnauthorized,
-				Msg:    repoErrors.ErrUserNotAuth.Error(),
+				Msg:    internalErrors.ErrUserNotAuth.Error(),
 				MsgRus: "пользователь не авторизован",
 			})
 			return
-		} else if errors.Is(err, repoErrors.ErrZeroRowsGet) {
+		} else if errors.Is(err, internalErrors.ErrZeroRowsGet) {
 			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 				Status: http.StatusNotFound,
-				Msg:    repoErrors.ErrZeroRowsGet.Error(),
+				Msg:    internalErrors.ErrZeroRowsGet.Error(),
 				MsgRus: "на данный момент у вас нет сгенерированных рецептов",
 			})
 			return
@@ -130,10 +130,10 @@ func (h *GeneratedHandler) GetGeneratedRecipeByID(w http.ResponseWriter, r *http
 	recipeData, err := h.usecase.GetRecipeByID(ctx, recipeID)
 
 	if err != nil {
-		if errors.Is(err, repoErrors.ErrUserNotAuth) {
+		if errors.Is(err, internalErrors.ErrUserNotAuth) {
 			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 				Status: http.StatusUnauthorized,
-				Msg:    repoErrors.ErrUserNotAuth.Error(),
+				Msg:    internalErrors.ErrUserNotAuth.Error(),
 				MsgRus: "пользователь не авторизован",
 			})
 			return
@@ -167,7 +167,7 @@ func (h *GeneratedHandler) CreateGeneratedRecipe(w http.ResponseWriter, r *http.
 	if generatedRecipeData.Ingredients == nil {
 		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 			Status: http.StatusBadRequest,
-			Msg:    "err with request",
+			Msg:    "errors with request",
 			MsgRus: "некорректные данные рецепта для генерации",
 		})
 		return
@@ -175,17 +175,17 @@ func (h *GeneratedHandler) CreateGeneratedRecipe(w http.ResponseWriter, r *http.
 
 	generatedRecipe, err := h.usecase.CreateRecipe(ctx, generatedRecipeData.Ingredients, generatedRecipeData.Query)
 	if err != nil {
-		if errors.Is(err, repoErrors.ErrUserNotAuth) {
+		if errors.Is(err, internalErrors.ErrUserNotAuth) {
 			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 				Status: http.StatusUnauthorized,
-				Msg:    repoErrors.ErrUserNotAuth.Error(),
+				Msg:    internalErrors.ErrUserNotAuth.Error(),
 				MsgRus: "пользователь не авторизован",
 			})
 			return
-		} else if errors.Is(err, repoErrors.ErrAllKeysAreUsing) {
+		} else if errors.Is(err, internalErrors.ErrAllKeysAreUsing) {
 			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 				Status: http.StatusUnauthorized,
-				Msg:    repoErrors.ErrAllKeysAreUsing.Error(),
+				Msg:    internalErrors.ErrAllKeysAreUsing.Error(),
 				MsgRus: "На данный момент шеф занят, попробуйте позднее",
 			})
 			return
@@ -228,10 +228,10 @@ func (h *GeneratedHandler) GetGeneratedRecipeHistoryByID(w http.ResponseWriter, 
 
 	history, err := h.usecase.GetHistoryByID(ctx, recipeID)
 	if err != nil {
-		if errors.Is(err, repoErrors.ErrUserNotAuth) {
+		if errors.Is(err, internalErrors.ErrUserNotAuth) {
 			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 				Status: http.StatusUnauthorized,
-				Msg:    repoErrors.ErrUserNotAuth.Error(),
+				Msg:    internalErrors.ErrUserNotAuth.Error(),
 				MsgRus: "пользователь не авторизован",
 			})
 			return
@@ -304,17 +304,17 @@ func (h *GeneratedHandler) UpgradeGeneratedRecipeByIDByVersion(w http.ResponseWr
 
 	recipeData, err := h.usecase.UpdateRecipe(ctx, generatedRecipeData.Query, recipeID, versionID)
 	if err != nil {
-		if errors.Is(err, repoErrors.ErrUserNotAuth) {
+		if errors.Is(err, internalErrors.ErrUserNotAuth) {
 			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 				Status: http.StatusUnauthorized,
-				Msg:    repoErrors.ErrUserNotAuth.Error(),
+				Msg:    internalErrors.ErrUserNotAuth.Error(),
 				MsgRus: "пользователь не авторизован",
 			})
 			return
-		} else if errors.Is(err, repoErrors.ErrAllKeysAreUsing) {
+		} else if errors.Is(err, internalErrors.ErrAllKeysAreUsing) {
 			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 				Status: http.StatusUnauthorized,
-				Msg:    repoErrors.ErrAllKeysAreUsing.Error(),
+				Msg:    internalErrors.ErrAllKeysAreUsing.Error(),
 				MsgRus: "На данный момент шеф занят, попробуйте позднее",
 			})
 			return
@@ -357,10 +357,10 @@ func (h *GeneratedHandler) StartCookingGeneratedRecipe(w http.ResponseWriter, r 
 
 	currentRecipeData, err := h.usecase.StartCookingByRecipeID(ctx, recipeID)
 	if err != nil {
-		if errors.Is(err, repoErrors.ErrUserNotAuth) {
+		if errors.Is(err, internalErrors.ErrUserNotAuth) {
 			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 				Status: http.StatusUnauthorized,
-				Msg:    repoErrors.ErrUserNotAuth.Error(),
+				Msg:    internalErrors.ErrUserNotAuth.Error(),
 				MsgRus: "пользователь не авторизован",
 			})
 			return
@@ -422,17 +422,17 @@ func (h *GeneratedHandler) SetNewMainVersionGeneratedRecipe(w http.ResponseWrite
 
 	err = h.usecase.SetNewMainVersion(ctx, recipeID, versionID)
 	if err != nil {
-		if errors.Is(err, repoErrors.ErrUserNotAuth) {
+		if errors.Is(err, internalErrors.ErrUserNotAuth) {
 			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 				Status: http.StatusUnauthorized,
-				Msg:    repoErrors.ErrUserNotAuth.Error(),
+				Msg:    internalErrors.ErrUserNotAuth.Error(),
 				MsgRus: "пользователь не авторизован",
 			})
 			return
-		} else if errors.Is(err, repoErrors.ErrVersionNotFound) {
+		} else if errors.Is(err, internalErrors.ErrVersionNotFound) {
 			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 				Status: http.StatusNotFound,
-				Msg:    repoErrors.ErrVersionNotFound.Error(),
+				Msg:    internalErrors.ErrVersionNotFound.Error(),
 				MsgRus: "данной версии не существует",
 			})
 		}

@@ -4,15 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/Olegsandrik/Exponenta/internal/errors"
+	"github.com/Olegsandrik/Exponenta/internal/utils"
 	"strings"
 
 	"github.com/Olegsandrik/Exponenta/internal/adapters/elasticsearch"
 	"github.com/Olegsandrik/Exponenta/internal/adapters/postgres"
 	"github.com/Olegsandrik/Exponenta/internal/repository/dao"
-	"github.com/Olegsandrik/Exponenta/internal/repository/repoErrors"
 	"github.com/Olegsandrik/Exponenta/internal/usecase/models"
 	"github.com/Olegsandrik/Exponenta/logger"
-	"github.com/Olegsandrik/Exponenta/utils"
 )
 
 type SearchRepository struct {
@@ -97,8 +97,8 @@ func (repo *SearchRepository) Search(ctx context.Context, query string, diet str
 	}
 
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("search err: %e with query: %s", err, query))
-		return models.SearchResponseModel{}, repoErrors.ErrFailToSearch
+		logger.Error(ctx, fmt.Sprintf("search errors: %e with query: %s", err, query))
+		return models.SearchResponseModel{}, internalErrors.ErrFailToSearch
 	}
 
 	var response dao.ResponseElasticRecipeIndex
@@ -109,12 +109,12 @@ func (repo *SearchRepository) Search(ctx context.Context, query string, diet str
 
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf("response decode error: %e with query: %s", err, query))
-		return models.SearchResponseModel{}, repoErrors.ErrFailToSearch
+		return models.SearchResponseModel{}, internalErrors.ErrFailToSearch
 	}
 
 	if len(response.Hits.Hits) == 0 {
 		logger.Error(ctx, fmt.Sprintf("no results found with query: %s", query))
-		return models.SearchResponseModel{}, repoErrors.ErrNoFound
+		return models.SearchResponseModel{}, internalErrors.ErrNoFound
 	}
 
 	result := dao.ConvertResponseElasticRecipeIndexToModel(response)
@@ -148,8 +148,8 @@ func (repo *SearchRepository) Suggest(ctx context.Context, query string) (models
 	defer res.Body.Close()
 
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("suggest err: %e with query: %s", err, query))
-		return models.SuggestResponseModel{}, repoErrors.ErrFailToGetSuggest
+		logger.Error(ctx, fmt.Sprintf("suggest errors: %e with query: %s", err, query))
+		return models.SuggestResponseModel{}, internalErrors.ErrFailToGetSuggest
 	}
 
 	var response dao.ResponseElasticSuggestIndex
@@ -158,7 +158,7 @@ func (repo *SearchRepository) Suggest(ctx context.Context, query string) (models
 
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf("suggest decode error: %e with query: %s", err, query))
-		return models.SuggestResponseModel{}, repoErrors.ErrFailToGetSuggest
+		return models.SuggestResponseModel{}, internalErrors.ErrFailToGetSuggest
 	}
 
 	if len(response.Hits.Hits) == 0 {
@@ -188,20 +188,20 @@ func (repo *SearchRepository) getFilter(ctx context.Context, filter string) ([]s
 	err := repo.AdapterPostgres.Select(ctx, &items, fmt.Sprintf(q, filter))
 
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("query err: %e with query: %s", err, fmt.Sprintf(q, filter)))
-		return nil, fmt.Errorf("err: %+v with filter: %s", repoErrors.ErrToGetFilterValues, filter)
+		logger.Error(ctx, fmt.Sprintf("query errors: %e with query: %s", err, fmt.Sprintf(q, filter)))
+		return nil, internalErrors.ErrToGetFilterValues
 	}
 
 	if len(items) == 0 {
 		logger.Error(ctx, fmt.Sprintf("no results found with query: %s", q))
-		return nil, fmt.Errorf("err: %+v with filter: %s", repoErrors.ErrToGetFilterValues, filter)
+		return nil, internalErrors.ErrToGetFilterValues
 	}
 
 	hashMap, err := dao.MakeSet(items)
 
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("query err: %+v with query: %s", err, q))
-		return nil, fmt.Errorf("err: %+v with filter: %s", repoErrors.ErrToGetFilterValues, filter)
+		logger.Error(ctx, fmt.Sprintf("query errors: %+v with query: %s", err, q))
+		return nil, internalErrors.ErrToGetFilterValues
 	}
 
 	result := make([]string, 0, len(hashMap))
@@ -223,13 +223,13 @@ func (repo *SearchRepository) GetMaxMinCookingTime(ctx context.Context) (models.
 	err := repo.AdapterPostgres.Select(ctx, &time, q)
 
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("query err: %e with query: %s", err, q))
-		return models.TimeModel{}, repoErrors.ErrGetMaxMinCookingTime
+		logger.Error(ctx, fmt.Sprintf("query errors: %e with query: %s", err, q))
+		return models.TimeModel{}, internalErrors.ErrGetMaxMinCookingTime
 	}
 
 	if len(time) == 0 {
 		logger.Error(ctx, fmt.Sprintf("no row with query: %s", q))
-		return models.TimeModel{}, repoErrors.ErrGetMaxMinCookingTime
+		return models.TimeModel{}, internalErrors.ErrGetMaxMinCookingTime
 	}
 
 	timeModel := dao.ConvertTimeDaoToModel(time[0])

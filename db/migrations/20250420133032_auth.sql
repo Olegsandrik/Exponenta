@@ -4,8 +4,8 @@
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     vk_id INT DEFAULT NULL, -- для OAuth
-    name text NOT NULL CHECK (length(name) <= 25 and length(name) >= 3),
-    sur_name text NOT NULL CHECK (length(name) <= 25 and length(name) >= 3),
+    name text NOT NULL CHECK (length(name) <= 25 and length(name) >= 2),
+    sur_name text NOT NULL CHECK (length(sur_name) <= 25 and length(sur_name) >= 2),
     login text UNIQUE CHECK ((vk_id IS NULL AND login IS NOT NULL)
                               OR
                              (vk_id IS NOT NULL AND login IS NULL)),

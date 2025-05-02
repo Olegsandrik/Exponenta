@@ -2,13 +2,13 @@ package usecase
 
 import (
 	"context"
+	internalErrors "github.com/Olegsandrik/Exponenta/internal/errors"
+	"github.com/Olegsandrik/Exponenta/internal/utils"
 	"github.com/microcosm-cc/bluemonday"
 	"regexp"
 
 	"github.com/Olegsandrik/Exponenta/internal/delivery/dto"
 	"github.com/Olegsandrik/Exponenta/internal/usecase/models"
-	"github.com/Olegsandrik/Exponenta/internal/usecase/usecaseErrors"
-	"github.com/Olegsandrik/Exponenta/utils"
 )
 
 type AuthRepo interface {
@@ -41,7 +41,7 @@ func (a *AuthUsecase) Login(ctx context.Context, login string, password string) 
 	}
 
 	if err = utils.CheckPassword(password, user.PasswordHash); err != nil {
-		return "", usecaseErrors.ErrInvalidPassword
+		return "", internalErrors.ErrInvalidPassword
 	}
 	return a.repo.CreateSession(ctx, user.ID)
 }
@@ -65,14 +65,9 @@ func (a *AuthUsecase) GetUserByID(ctx context.Context, uID uint) (dto.User, erro
 }
 
 func (a *AuthUsecase) SignUp(ctx context.Context, user dto.User) (uint, string, error) {
-	if user.Name == "" || user.Login == "" || user.Password == "" || user.SurName == "" {
-		return 0, "", usecaseErrors.ErrEmptySingUpData
-	}
-
-	re := regexp.MustCompile(`[!@#$&*]`)
-
-	if len(user.Password) < 8 || len(re.FindAllString(user.Password, -1)) < 2 {
-		return 0, "", usecaseErrors.ErrTooEasyPassword
+	err := utils.ValidateSignUpUserData(user)
+	if err != nil {
+		return 0, "", err
 	}
 
 	PasswordHash, err := utils.HashPassword(user.Password)
@@ -102,7 +97,7 @@ func (a *AuthUsecase) SignUp(ctx context.Context, user dto.User) (uint, string, 
 
 func (a *AuthUsecase) UpdatePassword(ctx context.Context, userID uint, password string, newPassword string) error {
 	if password == "" || newPassword == "" {
-		return usecaseErrors.ErrEmptyPassword
+		return internalErrors.ErrEmptyPassword
 	}
 
 	prevPassword, err := a.repo.GetUserPassword(ctx, userID)
@@ -111,13 +106,13 @@ func (a *AuthUsecase) UpdatePassword(ctx context.Context, userID uint, password 
 	}
 
 	if err = utils.CheckPassword(password, prevPassword); err != nil {
-		return usecaseErrors.ErrInvalidPassword
+		return internalErrors.ErrInvalidPassword
 	}
 
 	re := regexp.MustCompile(`[!@#$&*]`)
 
 	if len(newPassword) < 8 || len(re.FindAllString(newPassword, -1)) < 2 {
-		return usecaseErrors.ErrTooEasyPassword
+		return internalErrors.ErrTooEasyPassword
 	}
 
 	passwordHash, err := utils.HashPassword(newPassword)
@@ -133,21 +128,33 @@ func (a *AuthUsecase) UpdateUserName(ctx context.Context, userID uint, newUserna
 
 	newUsername = sanitizer.Sanitize(newUsername)
 	if newUsername == "" {
-		return usecaseErrors.ErrEmptyName
+		return internalErrors.ErrEmptyName
+	}
+
+	err := utils.ValidateName(newUsername)
+
+	if err != nil {
+		return err
 	}
 
 	return a.repo.UpdateUser(ctx, "name", newUsername, userID)
 }
 
-func (a *AuthUsecase) UpdateUserSurname(ctx context.Context, userID uint, newUsername string) error {
+func (a *AuthUsecase) UpdateUserSurname(ctx context.Context, userID uint, newUserSurName string) error {
 	sanitizer := bluemonday.UGCPolicy()
 
-	newUsername = sanitizer.Sanitize(newUsername)
-	if newUsername == "" {
-		return usecaseErrors.ErrEmptySurname
+	newUserSurName = sanitizer.Sanitize(newUserSurName)
+	if newUserSurName == "" {
+		return internalErrors.ErrEmptySurname
 	}
 
-	return a.repo.UpdateUser(ctx, "sur_name", newUsername, userID)
+	err := utils.ValidateSurname(newUserSurName)
+
+	if err != nil {
+		return err
+	}
+
+	return a.repo.UpdateUser(ctx, "sur_name", newUserSurName, userID)
 }
 
 func (a *AuthUsecase) UpdateUserLogin(ctx context.Context, userID uint, newLogin string) error {
@@ -156,7 +163,7 @@ func (a *AuthUsecase) UpdateUserLogin(ctx context.Context, userID uint, newLogin
 	newLogin = sanitizer.Sanitize(newLogin)
 
 	if newLogin == "" {
-		return usecaseErrors.ErrEmptyLogin
+		return internalErrors.ErrEmptyLogin
 	}
 
 	return a.repo.UpdateUser(ctx, "login", newLogin, userID)
@@ -172,7 +179,7 @@ func (a *AuthUsecase) IsVKUser(ctx context.Context, userID uint) bool {
 
 func (a *AuthUsecase) LoginVK(ctx context.Context, data dto.VKLoginData) (string, error) {
 	if data.DeviceID == "" || data.Code == "" || data.State == "" {
-		return "", usecaseErrors.ErrEmptyVKLoginData
+		return "", internalErrors.ErrEmptyVKLoginData
 	}
 	return a.repo.LoginVK(ctx, models.ConvertVKLoginDataDtoToModel(data))
 }

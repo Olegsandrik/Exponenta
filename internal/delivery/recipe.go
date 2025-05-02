@@ -3,12 +3,12 @@ package delivery
 import (
 	"context"
 	"errors"
-	"github.com/Olegsandrik/Exponenta/internal/repository/repoErrors"
+	internalErrors "github.com/Olegsandrik/Exponenta/internal/errors"
+	"github.com/Olegsandrik/Exponenta/internal/utils"
 	"net/http"
 	"strconv"
 
 	"github.com/Olegsandrik/Exponenta/internal/delivery/dto"
-	"github.com/Olegsandrik/Exponenta/utils"
 	"github.com/gorilla/mux"
 )
 
@@ -135,10 +135,10 @@ func (h *CookingRecipeHandler) GetCurrentRecipe(w http.ResponseWriter, r *http.R
 
 	recipeData, err := h.usecase.GetCurrentRecipe(ctx)
 	if err != nil {
-		if errors.Is(err, repoErrors.ErrUserNotAuth) {
+		if errors.Is(err, internalErrors.ErrUserNotAuth) {
 			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 				Status: http.StatusUnauthorized,
-				Msg:    repoErrors.ErrUserNotAuth.Error(),
+				Msg:    internalErrors.ErrUserNotAuth.Error(),
 				MsgRus: "пользователь не авторизован",
 			})
 			return
@@ -182,10 +182,10 @@ func (h *CookingRecipeHandler) StartCookingRecipe(w http.ResponseWriter, r *http
 	currentRecipe, err := h.usecase.StartCookingRecipe(ctx, recipeData.ID)
 
 	if err != nil {
-		if errors.Is(err, repoErrors.ErrUserNotAuth) {
+		if errors.Is(err, internalErrors.ErrUserNotAuth) {
 			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 				Status: http.StatusUnauthorized,
-				Msg:    repoErrors.ErrUserNotAuth.Error(),
+				Msg:    internalErrors.ErrUserNotAuth.Error(),
 				MsgRus: "пользователь не авторизован",
 			})
 			return
@@ -209,10 +209,10 @@ func (h *CookingRecipeHandler) EndCookingRecipe(w http.ResponseWriter, r *http.R
 
 	err := h.usecase.EndCookingRecipe(ctx)
 	if err != nil {
-		if errors.Is(err, repoErrors.ErrUserNotAuth) {
+		if errors.Is(err, internalErrors.ErrUserNotAuth) {
 			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 				Status: http.StatusUnauthorized,
-				Msg:    repoErrors.ErrUserNotAuth.Error(),
+				Msg:    internalErrors.ErrUserNotAuth.Error(),
 				MsgRus: "пользователь не авторизован",
 			})
 			return
@@ -236,10 +236,10 @@ func (h *CookingRecipeHandler) NextStepCookingRecipe(w http.ResponseWriter, r *h
 
 	nextStepData, err := h.usecase.NextStepRecipe(ctx)
 	if err != nil {
-		if errors.Is(err, repoErrors.ErrUserNotAuth) {
+		if errors.Is(err, internalErrors.ErrUserNotAuth) {
 			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 				Status: http.StatusUnauthorized,
-				Msg:    repoErrors.ErrUserNotAuth.Error(),
+				Msg:    internalErrors.ErrUserNotAuth.Error(),
 				MsgRus: "пользователь не авторизован",
 			})
 			return
@@ -263,10 +263,10 @@ func (h *CookingRecipeHandler) PrevStepCookingRecipe(w http.ResponseWriter, r *h
 
 	prevStepData, err := h.usecase.PreviousStepRecipe(ctx)
 	if err != nil {
-		if errors.Is(err, repoErrors.ErrUserNotAuth) {
+		if errors.Is(err, internalErrors.ErrUserNotAuth) {
 			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 				Status: http.StatusUnauthorized,
-				Msg:    repoErrors.ErrUserNotAuth.Error(),
+				Msg:    internalErrors.ErrUserNotAuth.Error(),
 				MsgRus: "пользователь не авторизован",
 			})
 			return
@@ -290,10 +290,10 @@ func (h *CookingRecipeHandler) GetAllTimersCookingRecipe(w http.ResponseWriter, 
 
 	timersData, err := h.usecase.GetTimersRecipe(ctx)
 	if err != nil {
-		if errors.Is(err, repoErrors.ErrUserNotAuth) {
+		if errors.Is(err, internalErrors.ErrUserNotAuth) {
 			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 				Status: http.StatusUnauthorized,
-				Msg:    repoErrors.ErrUserNotAuth.Error(),
+				Msg:    internalErrors.ErrUserNotAuth.Error(),
 				MsgRus: "пользователь не авторизован",
 			})
 			return
@@ -347,10 +347,10 @@ func (h *CookingRecipeHandler) AddTimerCookingRecipe(w http.ResponseWriter, r *h
 	err = h.usecase.AddTimerRecipe(ctx, TimerData.StepNum, TimerData.Time)
 
 	if err != nil {
-		if errors.Is(err, repoErrors.ErrUserNotAuth) {
+		if errors.Is(err, internalErrors.ErrUserNotAuth) {
 			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 				Status: http.StatusUnauthorized,
-				Msg:    repoErrors.ErrUserNotAuth.Error(),
+				Msg:    internalErrors.ErrUserNotAuth.Error(),
 				MsgRus: "пользователь не авторизован",
 			})
 			return
@@ -395,10 +395,10 @@ func (h *CookingRecipeHandler) FinishTimerCookingRecipe(w http.ResponseWriter, r
 	err = h.usecase.DeleteTimerRecipe(ctx, TimerData.StepNum)
 
 	if err != nil {
-		if errors.Is(err, repoErrors.ErrUserNotAuth) {
+		if errors.Is(err, internalErrors.ErrUserNotAuth) {
 			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 				Status: http.StatusUnauthorized,
-				Msg:    repoErrors.ErrUserNotAuth.Error(),
+				Msg:    internalErrors.ErrUserNotAuth.Error(),
 				MsgRus: "пользователь не авторизован",
 			})
 			return

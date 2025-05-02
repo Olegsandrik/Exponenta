@@ -2,6 +2,7 @@ package delivery
 
 import (
 	"fmt"
+	"github.com/Olegsandrik/Exponenta/internal/utils"
 	"io"
 	"net/http"
 
@@ -10,7 +11,6 @@ import (
 	"github.com/Olegsandrik/Exponenta/config"
 	"github.com/Olegsandrik/Exponenta/internal/delivery/dto"
 	"github.com/Olegsandrik/Exponenta/logger"
-	"github.com/Olegsandrik/Exponenta/utils"
 )
 
 const promptVoice = `You are a helpful assistant, you need to recognize main idea of russian text and send me only a number.

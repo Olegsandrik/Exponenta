@@ -2,9 +2,7 @@ package utils
 
 import (
 	"context"
-	"fmt"
-	"github.com/Olegsandrik/Exponenta/internal/repository/repoErrors"
-
+	internalErrors "github.com/Olegsandrik/Exponenta/internal/errors"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -13,7 +11,7 @@ type UserID struct{}
 func GetUserIDFromContext(ctx context.Context) (uint, error) {
 	userID, ok := ctx.Value(UserID{}).(uint)
 	if !ok || userID == 0 {
-		return 0, repoErrors.ErrUserNotAuth
+		return 0, internalErrors.ErrUserNotAuth
 	}
 	return userID, nil
 }
@@ -29,7 +27,7 @@ func HashPassword(password string) (string, error) {
 func CheckPassword(password string, hashedPassword string) error {
 	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
 	if err != nil {
-		return fmt.Errorf("invalid password")
+		return internalErrors.ErrInvalidPassword
 	}
 	return nil
 }

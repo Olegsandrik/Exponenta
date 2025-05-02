@@ -2,10 +2,10 @@ package middleware
 
 import (
 	"fmt"
+	"github.com/Olegsandrik/Exponenta/internal/utils"
 	"net/http"
 
 	"github.com/Olegsandrik/Exponenta/logger"
-	"github.com/Olegsandrik/Exponenta/utils"
 )
 
 func PanicMiddleware(next http.Handler) http.Handler {

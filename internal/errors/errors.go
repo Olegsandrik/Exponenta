@@ -1,4 +1,4 @@
-package repoErrors
+package internalErrors
 
 import (
 	"fmt"
@@ -26,8 +26,8 @@ var (
 	ErrFailedToDeleteTimer            = fmt.Errorf("failed to delete timer")
 	ErrFailedToGetTimers              = fmt.Errorf("failed to get timers")
 	ErrFailedToGetRecipeStep          = fmt.Errorf("failed to get recipe step")
-	ErrGetMaxMinCookingTime           = fmt.Errorf("err get max min cooking time")
-	ErrToGetFilterValues              = fmt.Errorf("err to get filter values")
+	ErrGetMaxMinCookingTime           = fmt.Errorf("errors get max min cooking time")
+	ErrToGetFilterValues              = fmt.Errorf("errors to get filter values")
 	ErrNoFoundImage                   = fmt.Errorf("no found image")
 	ErrWithGenerating                 = fmt.Errorf("failed to generate recipe")
 	ErrFailToGetRecipeByIDAndVersion  = fmt.Errorf("failed to get recipe by id and version")
@@ -50,4 +50,14 @@ var (
 	ErrFailToCreateVKUser             = fmt.Errorf("fail to create vk user")
 	ErrUserNotAuth                    = fmt.Errorf("user not authenticated")
 	ErrAllKeysAreUsing                = fmt.Errorf("all API keys are using")
+	ErrEmptyPassword                  = fmt.Errorf("password or newPassword is empty")
+	ErrEmptySingUpData                = fmt.Errorf("name or username or login or password is empty")
+	ErrTooShortUsername               = fmt.Errorf("username is too short for user")
+	ErrTooShortSurname                = fmt.Errorf("surname is too short for user")
+	ErrEmptyName                      = fmt.Errorf("new name is empty")
+	ErrEmptySurname                   = fmt.Errorf("new surname is empty")
+	ErrEmptyLogin                     = fmt.Errorf("new login is empty")
+	ErrEmptyVKLoginData               = fmt.Errorf("device id or code or state is empty")
+	ErrInvalidPassword                = fmt.Errorf("invalid password")
+	ErrTooEasyPassword                = fmt.Errorf("too easy password")
 )
