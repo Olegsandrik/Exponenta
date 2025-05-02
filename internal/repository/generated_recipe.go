@@ -246,7 +246,7 @@ func (repo *GeneratedRecipeRepo) GetRecipeByID(ctx context.Context, recipeID int
 
 func (repo *GeneratedRecipeRepo) GetHistoryByID(ctx context.Context, recipeID int,
 	userID uint) ([]models.RecipeModel, error) {
-	q := `SELECT r.id, r.ready_in_minutes, r.version, r.name, r.description, r.steps, r.dish_types, r.diets, r.servings, r.total_steps, 
+	q := `SELECT r.id, r.ingredients, r.ready_in_minutes, r.version, r.name, r.description, r.steps, r.dish_types, r.diets, r.servings, r.total_steps, 
        r.query FROM public.generated_recipes_versions as r WHERE user_id = $1 AND id = $2`
 
 	var recipeRows []dao.RecipeTable

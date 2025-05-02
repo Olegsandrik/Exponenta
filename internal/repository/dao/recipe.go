@@ -177,6 +177,7 @@ func ConvertDaoToRecipe(rt []RecipeTable) []models.RecipeModel {
 			DishTypes:   string(r.DishTypes),
 			Version:     r.Version,
 			Query:       r.Query,
+			Ingredients: r.Ingredients,
 		})
 	}
 	return RecipeItems
