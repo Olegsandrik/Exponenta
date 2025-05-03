@@ -108,7 +108,92 @@ const (
 	You must use products, that i will send you`
 
 	promptChoiceModernization = `You are a professional chef assistant. I will send you my recipe and you should reform
-	my recipe with my promise. Send me only json of my new recipe.`
+	my recipe with my promise. Send me only json of my new recipe. Correct json format is:
+	"name": "str",
+	"description": "str",
+	"servingsNum": int,
+	"dishTypes": [
+		"str",
+		"str",
+	],
+	"diets": [
+		"str",
+		"str"
+	],
+	"ingredients": [
+		{
+			"id": 1, // 1... inf
+			"name": "str",
+			"image": "str",
+			"amount": 0.5,
+			"unit": "ч. л."
+		},
+		{
+			"id": 2,
+			"name": "chocolate",
+			"image": "milk-chocolate.jpg",
+			"amount": 8,
+			"unit": "унций"
+		}
+	],
+	"totalSteps": int, 
+	"readyInMinutes": int,
+	"steps": [
+		{
+			"number": int,
+			"step": "description movement step",
+			"ingredients": [
+				{
+					"name": "молотый эспрессо",
+					"localizedName": "молотый эспрессо"
+				},
+				{
+					"name": "взбитые сливки",
+					"localizedName": "взбитые сливки"
+					
+				}
+			],
+			"equipment": [
+				{
+					"name": "пергамент для выпечки",
+					"localizedName": "пергамент для выпечки",
+				},
+				{
+					"name": "водяная баня",
+					"localizedName": "водяная баня",
+				}
+			],
+			"length": {
+				"number": 5,
+				"unit": "минут"
+			}
+		},
+		{
+			"number": int,
+			"step": "description movement step",
+			"ingredients": [
+				{
+					"name": "молотый эспрессо",
+					"localizedName": "молотый эспрессо"
+				},
+				{
+					"name": "взбитые сливки",
+					"localizedName": "взбитые сливки"
+				}
+			],
+			"equipment": [
+				{
+					"name": "пергамент для выпечки",
+					"localizedName": "пергамент для выпечки",
+				},
+				{
+					"name": "водяная баня",
+					"localizedName": "водяная баня",
+				}
+			],
+		}
+	]
+	`
 )
 
 type Key struct {
