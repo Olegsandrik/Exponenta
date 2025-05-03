@@ -4,14 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/Olegsandrik/Exponenta/internal/errors"
-	"github.com/Olegsandrik/Exponenta/internal/utils"
 	"strings"
 
 	"github.com/Olegsandrik/Exponenta/internal/adapters/elasticsearch"
 	"github.com/Olegsandrik/Exponenta/internal/adapters/postgres"
+	internalErrors "github.com/Olegsandrik/Exponenta/internal/internalerrors"
 	"github.com/Olegsandrik/Exponenta/internal/repository/dao"
 	"github.com/Olegsandrik/Exponenta/internal/usecase/models"
+	"github.com/Olegsandrik/Exponenta/internal/utils"
 	"github.com/Olegsandrik/Exponenta/logger"
 )
 
@@ -97,7 +97,7 @@ func (repo *SearchRepository) Search(ctx context.Context, query string, diet str
 	}
 
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("search errors: %e with query: %s", err, query))
+		logger.Error(ctx, fmt.Sprintf("search internalerrors: %e with query: %s", err, query))
 		return models.SearchResponseModel{}, internalErrors.ErrFailToSearch
 	}
 
@@ -148,7 +148,7 @@ func (repo *SearchRepository) Suggest(ctx context.Context, query string) (models
 	defer res.Body.Close()
 
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("suggest errors: %e with query: %s", err, query))
+		logger.Error(ctx, fmt.Sprintf("suggest internalerrors: %e with query: %s", err, query))
 		return models.SuggestResponseModel{}, internalErrors.ErrFailToGetSuggest
 	}
 
@@ -188,7 +188,7 @@ func (repo *SearchRepository) getFilter(ctx context.Context, filter string) ([]s
 	err := repo.AdapterPostgres.Select(ctx, &items, fmt.Sprintf(q, filter))
 
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("query errors: %e with query: %s", err, fmt.Sprintf(q, filter)))
+		logger.Error(ctx, fmt.Sprintf("query internalerrors: %e with query: %s", err, fmt.Sprintf(q, filter)))
 		return nil, internalErrors.ErrToGetFilterValues
 	}
 
@@ -200,7 +200,7 @@ func (repo *SearchRepository) getFilter(ctx context.Context, filter string) ([]s
 	hashMap, err := dao.MakeSet(items)
 
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("query errors: %+v with query: %s", err, q))
+		logger.Error(ctx, fmt.Sprintf("query internalerrors: %+v with query: %s", err, q))
 		return nil, internalErrors.ErrToGetFilterValues
 	}
 
@@ -223,7 +223,7 @@ func (repo *SearchRepository) GetMaxMinCookingTime(ctx context.Context) (models.
 	err := repo.AdapterPostgres.Select(ctx, &time, q)
 
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("query errors: %e with query: %s", err, q))
+		logger.Error(ctx, fmt.Sprintf("query internalerrors: %e with query: %s", err, q))
 		return models.TimeModel{}, internalErrors.ErrGetMaxMinCookingTime
 	}
 

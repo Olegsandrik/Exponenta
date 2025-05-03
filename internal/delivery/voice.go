@@ -2,7 +2,6 @@ package delivery
 
 import (
 	"fmt"
-	"github.com/Olegsandrik/Exponenta/internal/utils"
 	"io"
 	"net/http"
 
@@ -10,10 +9,12 @@ import (
 
 	"github.com/Olegsandrik/Exponenta/config"
 	"github.com/Olegsandrik/Exponenta/internal/delivery/dto"
+	"github.com/Olegsandrik/Exponenta/internal/utils"
 	"github.com/Olegsandrik/Exponenta/logger"
 )
 
-const promptVoice = `You are a helpful assistant, you need to recognize main idea of russian text and send me only a number.
+const promptVoice = `You are a helpful assistant, you need to recognize main idea of russian 
+	text and send me only a number.
 	You should send me 1 if main idea of text is next step or switch step.
 	You should send me 2 if main idea of text is previous step or switch step to previous.
 	You should send me 3 if main idea of text is end cooking.

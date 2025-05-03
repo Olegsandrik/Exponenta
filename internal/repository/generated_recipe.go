@@ -4,8 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	internalErrors "github.com/Olegsandrik/Exponenta/internal/errors"
-	"github.com/Olegsandrik/Exponenta/internal/utils"
 	"strings"
 	"sync"
 
@@ -13,8 +11,10 @@ import (
 
 	"github.com/Olegsandrik/Exponenta/config"
 	"github.com/Olegsandrik/Exponenta/internal/adapters/postgres"
+	internalErrors "github.com/Olegsandrik/Exponenta/internal/internalerrors"
 	"github.com/Olegsandrik/Exponenta/internal/repository/dao"
 	"github.com/Olegsandrik/Exponenta/internal/usecase/models"
+	"github.com/Olegsandrik/Exponenta/internal/utils"
 	"github.com/Olegsandrik/Exponenta/logger"
 )
 
@@ -173,7 +173,6 @@ func (repo *GeneratedRecipeRepo) GetKey() (string, int, error) {
 	}
 
 	return "", 0, internalErrors.ErrAllKeysAreUsing
-
 }
 
 func (repo *GeneratedRecipeRepo) GetAllRecipes(ctx context.Context, num int,
@@ -219,7 +218,8 @@ func (repo *GeneratedRecipeRepo) getRecipeByIDAndVersion(ctx context.Context, re
 
 func (repo *GeneratedRecipeRepo) GetRecipeByID(ctx context.Context, recipeID int,
 	userID uint) ([]models.RecipeModel, error) {
-	q := `SELECT r.name, r.version, r.user_ingredients, r.query, r.description, r.ingredients, r.steps, r.dish_types, r.diets, r.servings, 
+	q := `SELECT r.name, r.version, r.user_ingredients, r.query, r.description, r.ingredients, r.steps, 
+       r.dish_types, r.diets, r.servings, 
        r.ready_in_minutes FROM public.generated_recipes as r WHERE r.user_id = $1 AND r.id = $2`
 
 	recipeRows := make([]dao.RecipeTable, 0, 1)
@@ -246,7 +246,8 @@ func (repo *GeneratedRecipeRepo) GetRecipeByID(ctx context.Context, recipeID int
 
 func (repo *GeneratedRecipeRepo) GetHistoryByID(ctx context.Context, recipeID int,
 	userID uint) ([]models.RecipeModel, error) {
-	q := `SELECT r.id, r.ingredients, r.ready_in_minutes, r.version, r.name, r.description, r.steps, r.dish_types, r.diets, r.servings, r.total_steps, 
+	q := `SELECT r.id, r.ingredients, r.ready_in_minutes, r.version, r.name, r.description, r.steps, r.dish_types, 
+       r.diets, r.servings, r.total_steps, 
        r.query FROM public.generated_recipes_versions as r WHERE user_id = $1 AND id = $2`
 
 	var recipeRows []dao.RecipeTable
@@ -254,7 +255,7 @@ func (repo *GeneratedRecipeRepo) GetHistoryByID(ctx context.Context, recipeID in
 	err := repo.storage.Select(ctx, &recipeRows, q, userID, recipeID)
 
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("errors getting history rows: %+v with rid: %d, uid: %d",
+		logger.Error(ctx, fmt.Sprintf("internalerrors getting history rows: %+v with rid: %d, uid: %d",
 			err, recipeID, userID))
 		return nil, err
 	}
@@ -308,7 +309,7 @@ func (repo *GeneratedRecipeRepo) CreateRecipe(ctx context.Context, products []st
 	tx, err := repo.storage.BeginTx(ctx, nil)
 	if err != nil {
 		logger.Error(ctx,
-			fmt.Sprintf("failed to begin transaction on generating recipe: %d, errors: %e", userID, err),
+			fmt.Sprintf("failed to begin transaction on generating recipe: %d, internalerrors: %e", userID, err),
 		)
 		return nil, internalErrors.ErrWithGenerating
 	}
@@ -437,7 +438,7 @@ func (repo *GeneratedRecipeRepo) UpdateRecipe(ctx context.Context, query string,
 	APIKey, APIKeyID, err := repo.GetKey()
 
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("no free keys now"))
+		logger.Error(ctx, "no free keys now")
 		return nil, err
 	}
 

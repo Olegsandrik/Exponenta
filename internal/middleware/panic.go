@@ -2,9 +2,9 @@ package middleware
 
 import (
 	"fmt"
-	"github.com/Olegsandrik/Exponenta/internal/utils"
 	"net/http"
 
+	"github.com/Olegsandrik/Exponenta/internal/utils"
 	"github.com/Olegsandrik/Exponenta/logger"
 )
 

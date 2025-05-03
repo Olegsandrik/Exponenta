@@ -2,16 +2,17 @@ package usecase
 
 import (
 	"context"
-	internalErrors "github.com/Olegsandrik/Exponenta/internal/errors"
-	"github.com/Olegsandrik/Exponenta/internal/utils"
-	"github.com/microcosm-cc/bluemonday"
 	"regexp"
 
+	"github.com/microcosm-cc/bluemonday"
+
 	"github.com/Olegsandrik/Exponenta/internal/delivery/dto"
+	internalErrors "github.com/Olegsandrik/Exponenta/internal/internalerrors"
 	"github.com/Olegsandrik/Exponenta/internal/usecase/models"
+	"github.com/Olegsandrik/Exponenta/internal/utils"
 )
 
-type AuthRepo interface {
+type UserRepo interface {
 	CreateSession(ctx context.Context, uID uint) (string, error)
 	DeleteSession(ctx context.Context, sID string) error
 	SessionExists(ctx context.Context, sID string) bool
@@ -26,15 +27,15 @@ type AuthRepo interface {
 	GetUserLoginByID(ctx context.Context, userID uint) (string, error)
 }
 
-type AuthUsecase struct {
-	repo AuthRepo
+type UserUsecase struct {
+	repo UserRepo
 }
 
-func NewAuthUsecase(repo AuthRepo) *AuthUsecase {
-	return &AuthUsecase{repo: repo}
+func NewUserUsecase(repo UserRepo) *UserUsecase {
+	return &UserUsecase{repo: repo}
 }
 
-func (a *AuthUsecase) Login(ctx context.Context, login string, password string) (string, error) {
+func (a *UserUsecase) Login(ctx context.Context, login string, password string) (string, error) {
 	user, err := a.repo.GetUser(ctx, login)
 	if err != nil {
 		return "", err
@@ -46,15 +47,15 @@ func (a *AuthUsecase) Login(ctx context.Context, login string, password string) 
 	return a.repo.CreateSession(ctx, user.ID)
 }
 
-func (a *AuthUsecase) IsLoggedIn(ctx context.Context, sID string) bool {
+func (a *UserUsecase) IsLoggedIn(ctx context.Context, sID string) bool {
 	return a.repo.SessionExists(ctx, sID)
 }
 
-func (a *AuthUsecase) Logout(ctx context.Context, sID string) error {
+func (a *UserUsecase) Logout(ctx context.Context, sID string) error {
 	return a.repo.DeleteSession(ctx, sID)
 }
 
-func (a *AuthUsecase) GetUserByID(ctx context.Context, uID uint) (dto.User, error) {
+func (a *UserUsecase) GetUserByID(ctx context.Context, uID uint) (dto.User, error) {
 	userModel, err := a.repo.GetUserByID(ctx, uID)
 	if err != nil {
 		return dto.User{}, err
@@ -64,7 +65,7 @@ func (a *AuthUsecase) GetUserByID(ctx context.Context, uID uint) (dto.User, erro
 	return userDto, nil
 }
 
-func (a *AuthUsecase) SignUp(ctx context.Context, user dto.User) (uint, string, error) {
+func (a *UserUsecase) SignUp(ctx context.Context, user dto.User) (uint, string, error) {
 	err := utils.ValidateSignUpUserData(user)
 	if err != nil {
 		return 0, "", err
@@ -95,7 +96,7 @@ func (a *AuthUsecase) SignUp(ctx context.Context, user dto.User) (uint, string, 
 	return uID, sID, nil
 }
 
-func (a *AuthUsecase) UpdatePassword(ctx context.Context, userID uint, password string, newPassword string) error {
+func (a *UserUsecase) UpdatePassword(ctx context.Context, userID uint, password string, newPassword string) error {
 	if password == "" || newPassword == "" {
 		return internalErrors.ErrEmptyPassword
 	}
@@ -123,7 +124,7 @@ func (a *AuthUsecase) UpdatePassword(ctx context.Context, userID uint, password 
 	return a.repo.UpdateUser(ctx, "password_hash", passwordHash, userID)
 }
 
-func (a *AuthUsecase) UpdateUserName(ctx context.Context, userID uint, newUsername string) error {
+func (a *UserUsecase) UpdateUserName(ctx context.Context, userID uint, newUsername string) error {
 	sanitizer := bluemonday.UGCPolicy()
 
 	newUsername = sanitizer.Sanitize(newUsername)
@@ -140,7 +141,7 @@ func (a *AuthUsecase) UpdateUserName(ctx context.Context, userID uint, newUserna
 	return a.repo.UpdateUser(ctx, "name", newUsername, userID)
 }
 
-func (a *AuthUsecase) UpdateUserSurname(ctx context.Context, userID uint, newUserSurName string) error {
+func (a *UserUsecase) UpdateUserSurname(ctx context.Context, userID uint, newUserSurName string) error {
 	sanitizer := bluemonday.UGCPolicy()
 
 	newUserSurName = sanitizer.Sanitize(newUserSurName)
@@ -157,7 +158,7 @@ func (a *AuthUsecase) UpdateUserSurname(ctx context.Context, userID uint, newUse
 	return a.repo.UpdateUser(ctx, "sur_name", newUserSurName, userID)
 }
 
-func (a *AuthUsecase) UpdateUserLogin(ctx context.Context, userID uint, newLogin string) error {
+func (a *UserUsecase) UpdateUserLogin(ctx context.Context, userID uint, newLogin string) error {
 	sanitizer := bluemonday.UGCPolicy()
 
 	newLogin = sanitizer.Sanitize(newLogin)
@@ -169,21 +170,21 @@ func (a *AuthUsecase) UpdateUserLogin(ctx context.Context, userID uint, newLogin
 	return a.repo.UpdateUser(ctx, "login", newLogin, userID)
 }
 
-func (a *AuthUsecase) DeleteProfile(ctx context.Context, userID uint) error {
+func (a *UserUsecase) DeleteProfile(ctx context.Context, userID uint) error {
 	return a.repo.DeleteUser(ctx, userID)
 }
 
-func (a *AuthUsecase) IsVKUser(ctx context.Context, userID uint) bool {
+func (a *UserUsecase) IsVKUser(ctx context.Context, userID uint) bool {
 	return a.repo.IsVKUser(ctx, userID)
 }
 
-func (a *AuthUsecase) LoginVK(ctx context.Context, data dto.VKLoginData) (string, error) {
+func (a *UserUsecase) LoginVK(ctx context.Context, data dto.VKLoginData) (string, error) {
 	if data.DeviceID == "" || data.Code == "" || data.State == "" {
 		return "", internalErrors.ErrEmptyVKLoginData
 	}
 	return a.repo.LoginVK(ctx, models.ConvertVKLoginDataDtoToModel(data))
 }
 
-func (a *AuthUsecase) GetUserLoginByID(ctx context.Context, userID uint) (string, error) {
+func (a *UserUsecase) GetUserLoginByID(ctx context.Context, userID uint) (string, error) {
 	return a.repo.GetUserLoginByID(ctx, userID)
 }

@@ -2,17 +2,18 @@ package middleware
 
 import (
 	"context"
-	"github.com/Olegsandrik/Exponenta/internal/utils"
 	"net/http"
 
 	"github.com/gorilla/mux"
+
+	"github.com/Olegsandrik/Exponenta/internal/utils"
 )
 
-type RedisAdapter interface {
+type UserRepo interface {
 	GetUserIDBySessionID(ctx context.Context, sessionID string) (uint, error)
 }
 
-func NewAuthMiddleware(adapter RedisAdapter) mux.MiddlewareFunc {
+func NewAuthMiddleware(adapter UserRepo) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()

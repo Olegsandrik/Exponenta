@@ -3,9 +3,9 @@ package repository
 import (
 	"context"
 	"fmt"
-	internalErrors "github.com/Olegsandrik/Exponenta/internal/errors"
 
 	"github.com/Olegsandrik/Exponenta/internal/adapters/minio"
+	internalErrors "github.com/Olegsandrik/Exponenta/internal/internalerrors"
 	"github.com/Olegsandrik/Exponenta/internal/usecase/models"
 	"github.com/Olegsandrik/Exponenta/internal/utils"
 	"github.com/Olegsandrik/Exponenta/logger"

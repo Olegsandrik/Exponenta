@@ -3,13 +3,14 @@ package delivery
 import (
 	"context"
 	"errors"
-	internalErrors "github.com/Olegsandrik/Exponenta/internal/errors"
-	"github.com/Olegsandrik/Exponenta/internal/utils"
 	"net/http"
 	"strconv"
 
-	"github.com/Olegsandrik/Exponenta/internal/delivery/dto"
 	"github.com/gorilla/mux"
+
+	"github.com/Olegsandrik/Exponenta/internal/delivery/dto"
+	internalErrors "github.com/Olegsandrik/Exponenta/internal/internalerrors"
+	"github.com/Olegsandrik/Exponenta/internal/utils"
 )
 
 type SearchUsecase interface {

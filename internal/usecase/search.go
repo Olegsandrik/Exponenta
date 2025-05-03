@@ -2,10 +2,10 @@ package usecase
 
 import (
 	"context"
-	"github.com/Olegsandrik/Exponenta/internal/utils"
 
 	"github.com/Olegsandrik/Exponenta/internal/delivery/dto"
 	"github.com/Olegsandrik/Exponenta/internal/usecase/models"
+	"github.com/Olegsandrik/Exponenta/internal/utils"
 )
 
 type SearchRepo interface {

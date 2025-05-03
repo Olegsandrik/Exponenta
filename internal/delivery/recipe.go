@@ -3,13 +3,17 @@ package delivery
 import (
 	"context"
 	"errors"
-	internalErrors "github.com/Olegsandrik/Exponenta/internal/errors"
-	"github.com/Olegsandrik/Exponenta/internal/utils"
 	"net/http"
-	"strconv"
+
+	"github.com/gorilla/mux"
 
 	"github.com/Olegsandrik/Exponenta/internal/delivery/dto"
-	"github.com/gorilla/mux"
+	internalErrors "github.com/Olegsandrik/Exponenta/internal/internalerrors"
+	"github.com/Olegsandrik/Exponenta/internal/utils"
+)
+
+const (
+	num = "num"
 )
 
 type CookingRecipeUsecase interface {
@@ -55,27 +59,18 @@ func (h *CookingRecipeHandler) InitRouter(r *mux.Router) {
 
 func (h *CookingRecipeHandler) GetAllRecipes(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	numStr := r.URL.Query().Get("num")
-	if numStr == "" {
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
-			Status: http.StatusBadRequest,
-			Msg:    "num not found",
-			MsgRus: "num не найден",
-		})
-		return
-	}
 
-	num, err := strconv.Atoi(numStr)
+	numParam, err := dto.GetIntQueryParam(r, num)
 	if err != nil {
 		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 			Status: http.StatusBadRequest,
 			Msg:    err.Error(),
-			MsgRus: "номер должен быть целым числом",
+			MsgRus: "некорректные данные num",
 		})
 		return
 	}
 
-	recipeData, err := h.usecase.GetAllRecipe(ctx, num)
+	recipeData, err := h.usecase.GetAllRecipe(ctx, numParam)
 
 	if err != nil {
 		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
@@ -94,17 +89,8 @@ func (h *CookingRecipeHandler) GetAllRecipes(w http.ResponseWriter, r *http.Requ
 
 func (h *CookingRecipeHandler) GetRecipeByID(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	recipeIDStr, ok := mux.Vars(r)["id"]
-	if !ok {
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
-			Status: http.StatusBadRequest,
-			Msg:    "id not found",
-			MsgRus: "id не найден",
-		})
-		return
-	}
 
-	recipeID, err := strconv.Atoi(recipeIDStr)
+	recipeIDParam, err := dto.GetIntURLParam(r, recipeID)
 	if err != nil {
 		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 			Status: http.StatusBadRequest,
@@ -114,7 +100,7 @@ func (h *CookingRecipeHandler) GetRecipeByID(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	recipe, err := h.usecase.GetRecipeByID(ctx, recipeID)
+	recipe, err := h.usecase.GetRecipeByID(ctx, recipeIDParam)
 	if err != nil {
 		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 			Status: http.StatusInternalServerError,

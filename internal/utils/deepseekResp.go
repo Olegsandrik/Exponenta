@@ -24,7 +24,6 @@ type ChatRequest struct {
 
 func BuildRequest(ctx context.Context, userInput string, APIURL string, APIKey string,
 	promptChoice string) (*http.Request, error) {
-
 	reqChat := ChatRequest{
 		Model: "deepseek-chat",
 		Messages: []Message{

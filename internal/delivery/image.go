@@ -2,13 +2,14 @@ package delivery
 
 import (
 	"context"
-	"github.com/Olegsandrik/Exponenta/internal/utils"
 	"io"
 	"net/http"
 	"time"
 
-	"github.com/Olegsandrik/Exponenta/internal/delivery/dto"
 	"github.com/gorilla/mux"
+
+	"github.com/Olegsandrik/Exponenta/internal/delivery/dto"
+	"github.com/Olegsandrik/Exponenta/internal/utils"
 )
 
 type ImageUsecase interface {

@@ -3,14 +3,17 @@ package delivery
 import (
 	"context"
 	"errors"
-	internalErrors "github.com/Olegsandrik/Exponenta/internal/errors"
-	"github.com/Olegsandrik/Exponenta/internal/utils"
 	"net/http"
-	"strconv"
 
 	"github.com/gorilla/mux"
 
 	"github.com/Olegsandrik/Exponenta/internal/delivery/dto"
+	internalErrors "github.com/Olegsandrik/Exponenta/internal/internalerrors"
+	"github.com/Olegsandrik/Exponenta/internal/utils"
+)
+
+const (
+	versionID = "versionID"
 )
 
 type GeneratedUsecase interface {
@@ -54,27 +57,18 @@ func (h *GeneratedHandler) InitRouter(r *mux.Router) {
 
 func (h *GeneratedHandler) GetAllGeneratedRecipes(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	numStr := r.URL.Query().Get("num")
-	if numStr == "" {
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
-			Status: http.StatusBadRequest,
-			Msg:    "num not found",
-			MsgRus: "num не найден",
-		})
-		return
-	}
+	numParam, err := dto.GetIntQueryParam(r, num)
 
-	num, err := strconv.Atoi(numStr)
 	if err != nil {
 		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 			Status: http.StatusBadRequest,
 			Msg:    err.Error(),
-			MsgRus: "номер должен быть целым числом",
+			MsgRus: "некорректный параметр num",
 		})
 		return
 	}
 
-	recipesData, err := h.usecase.GetAllRecipes(ctx, num)
+	recipesData, err := h.usecase.GetAllRecipes(ctx, numParam)
 	if err != nil {
 		if errors.Is(err, internalErrors.ErrUserNotAuth) {
 			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
@@ -107,27 +101,18 @@ func (h *GeneratedHandler) GetAllGeneratedRecipes(w http.ResponseWriter, r *http
 
 func (h *GeneratedHandler) GetGeneratedRecipeByID(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	recipeIDStr, ok := mux.Vars(r)["recipeID"]
-	if !ok {
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
-			Status: http.StatusBadRequest,
-			Msg:    "recipeID not found",
-			MsgRus: "recipeID не найден",
-		})
-		return
-	}
 
-	recipeID, err := strconv.Atoi(recipeIDStr)
+	recipeIDParam, err := dto.GetIntURLParam(r, recipeID)
 	if err != nil {
 		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 			Status: http.StatusBadRequest,
 			Msg:    err.Error(),
-			MsgRus: "recipeID должен быть целым числом",
+			MsgRus: "некорректный параметр recipeID",
 		})
 		return
 	}
 
-	recipeData, err := h.usecase.GetRecipeByID(ctx, recipeID)
+	recipeData, err := h.usecase.GetRecipeByID(ctx, recipeIDParam)
 
 	if err != nil {
 		if errors.Is(err, internalErrors.ErrUserNotAuth) {
@@ -167,7 +152,7 @@ func (h *GeneratedHandler) CreateGeneratedRecipe(w http.ResponseWriter, r *http.
 	if generatedRecipeData.Ingredients == nil {
 		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 			Status: http.StatusBadRequest,
-			Msg:    "errors with request",
+			Msg:    "err with request",
 			MsgRus: "некорректные данные рецепта для генерации",
 		})
 		return
@@ -206,27 +191,17 @@ func (h *GeneratedHandler) CreateGeneratedRecipe(w http.ResponseWriter, r *http.
 
 func (h *GeneratedHandler) GetGeneratedRecipeHistoryByID(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	recipeIDStr, ok := mux.Vars(r)["recipeID"]
-	if !ok {
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
-			Status: http.StatusBadRequest,
-			Msg:    "recipeID not found",
-			MsgRus: "recipeID не найден",
-		})
-		return
-	}
-
-	recipeID, err := strconv.Atoi(recipeIDStr)
+	recipeIDParam, err := dto.GetIntURLParam(r, recipeID)
 	if err != nil {
 		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 			Status: http.StatusBadRequest,
 			Msg:    err.Error(),
-			MsgRus: "recipeID должен быть целым числом",
+			MsgRus: "некорректный параметр recipeID",
 		})
 		return
 	}
 
-	history, err := h.usecase.GetHistoryByID(ctx, recipeID)
+	history, err := h.usecase.GetHistoryByID(ctx, recipeIDParam)
 	if err != nil {
 		if errors.Is(err, internalErrors.ErrUserNotAuth) {
 			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
@@ -252,42 +227,22 @@ func (h *GeneratedHandler) GetGeneratedRecipeHistoryByID(w http.ResponseWriter, 
 
 func (h *GeneratedHandler) UpgradeGeneratedRecipeByIDByVersion(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	recipeIDStr, ok := mux.Vars(r)["recipeID"]
-	if !ok {
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
-			Status: http.StatusBadRequest,
-			Msg:    "recipeID not found",
-			MsgRus: "recipeID не найден",
-		})
-		return
-	}
-
-	recipeID, err := strconv.Atoi(recipeIDStr)
+	recipeIDParam, err := dto.GetIntURLParam(r, recipeID)
 	if err != nil {
 		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 			Status: http.StatusBadRequest,
 			Msg:    err.Error(),
-			MsgRus: "recipeID должен быть целым числом",
+			MsgRus: "некорректный параметр recipeID",
 		})
 		return
 	}
 
-	versionIDStr, ok := mux.Vars(r)["versionID"]
-	if !ok {
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
-			Status: http.StatusBadRequest,
-			Msg:    "versionID not found",
-			MsgRus: "versionID не найден",
-		})
-		return
-	}
-
-	versionID, err := strconv.Atoi(versionIDStr)
+	versionIDParam, err := dto.GetIntURLParam(r, versionID)
 	if err != nil {
 		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 			Status: http.StatusBadRequest,
 			Msg:    err.Error(),
-			MsgRus: "versionID должен быть целым числом",
+			MsgRus: "некорректный параметр versionID",
 		})
 		return
 	}
@@ -302,7 +257,7 @@ func (h *GeneratedHandler) UpgradeGeneratedRecipeByIDByVersion(w http.ResponseWr
 		return
 	}
 
-	recipeData, err := h.usecase.UpdateRecipe(ctx, generatedRecipeData.Query, recipeID, versionID)
+	recipeData, err := h.usecase.UpdateRecipe(ctx, generatedRecipeData.Query, recipeIDParam, versionIDParam)
 	if err != nil {
 		if errors.Is(err, internalErrors.ErrUserNotAuth) {
 			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
@@ -335,27 +290,17 @@ func (h *GeneratedHandler) UpgradeGeneratedRecipeByIDByVersion(w http.ResponseWr
 
 func (h *GeneratedHandler) StartCookingGeneratedRecipe(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	recipeIDStr, ok := mux.Vars(r)["recipeID"]
-	if !ok {
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
-			Status: http.StatusBadRequest,
-			Msg:    "recipeID not found",
-			MsgRus: "recipeID не найден",
-		})
-		return
-	}
-
-	recipeID, err := strconv.Atoi(recipeIDStr)
+	recipeIDParam, err := dto.GetIntURLParam(r, recipeID)
 	if err != nil {
 		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 			Status: http.StatusBadRequest,
 			Msg:    err.Error(),
-			MsgRus: "recipeID должен быть целым числом",
+			MsgRus: "некорректный параметр recipeID",
 		})
 		return
 	}
 
-	currentRecipeData, err := h.usecase.StartCookingByRecipeID(ctx, recipeID)
+	currentRecipeData, err := h.usecase.StartCookingByRecipeID(ctx, recipeIDParam)
 	if err != nil {
 		if errors.Is(err, internalErrors.ErrUserNotAuth) {
 			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
@@ -380,47 +325,27 @@ func (h *GeneratedHandler) StartCookingGeneratedRecipe(w http.ResponseWriter, r 
 
 func (h *GeneratedHandler) SetNewMainVersionGeneratedRecipe(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	recipeIDStr, ok := mux.Vars(r)["recipeID"]
-	if !ok {
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
-			Status: http.StatusBadRequest,
-			Msg:    "recipeID not found",
-			MsgRus: "recipeID не найден",
-		})
-		return
-	}
-
-	recipeID, err := strconv.Atoi(recipeIDStr)
+	recipeIDParam, err := dto.GetIntURLParam(r, recipeID)
 	if err != nil {
 		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 			Status: http.StatusBadRequest,
 			Msg:    err.Error(),
-			MsgRus: "recipeID должен быть целым числом",
+			MsgRus: "некорректный параметр recipeID",
 		})
 		return
 	}
 
-	versionIDStr, ok := mux.Vars(r)["versionID"]
-	if !ok {
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
-			Status: http.StatusBadRequest,
-			Msg:    "versionID not found",
-			MsgRus: "versionID не найден",
-		})
-		return
-	}
-
-	versionID, err := strconv.Atoi(versionIDStr)
+	versionIDParam, err := dto.GetIntURLParam(r, versionID)
 	if err != nil {
 		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
 			Status: http.StatusBadRequest,
 			Msg:    err.Error(),
-			MsgRus: "versionID должен быть целым числом",
+			MsgRus: "некорректный параметр versionID",
 		})
 		return
 	}
 
-	err = h.usecase.SetNewMainVersion(ctx, recipeID, versionID)
+	err = h.usecase.SetNewMainVersion(ctx, recipeIDParam, versionIDParam)
 	if err != nil {
 		if errors.Is(err, internalErrors.ErrUserNotAuth) {
 			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{

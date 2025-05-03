@@ -4,15 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/Olegsandrik/Exponenta/internal/errors"
 	"time"
 
+	"github.com/jmoiron/sqlx"
+
 	"github.com/Olegsandrik/Exponenta/internal/adapters/postgres"
+	internalErrors "github.com/Olegsandrik/Exponenta/internal/internalerrors"
 	"github.com/Olegsandrik/Exponenta/internal/repository/dao"
 	"github.com/Olegsandrik/Exponenta/internal/usecase/models"
 	"github.com/Olegsandrik/Exponenta/logger"
-
-	"github.com/jmoiron/sqlx"
 )
 
 type CookingRecipeRepo struct {
@@ -53,7 +53,7 @@ func (repo *CookingRecipeRepo) GetRecipeByID(ctx context.Context, id int) ([]mod
 	tx, err := repo.storage.BeginTx(ctx, nil)
 	if err != nil {
 		logger.Error(ctx,
-			fmt.Sprintf("failed to begin transaction on getting recipe: %d, errors: %e", id, err),
+			fmt.Sprintf("failed to begin transaction on getting recipe: %d, internalerrors: %e", id, err),
 		)
 		return nil, internalErrors.ErrFailToGetRecipeByID
 	}
@@ -62,7 +62,7 @@ func (repo *CookingRecipeRepo) GetRecipeByID(ctx context.Context, id int) ([]mod
 		if err != nil {
 			if err = tx.Rollback(); err != nil {
 				logger.Error(ctx, fmt.Sprintf(
-					"failed to rollback transaction on getting recipe: %d, errors: %e",
+					"failed to rollback transaction on getting recipe: %d, internalerrors: %e",
 					id,
 					err))
 			}
@@ -72,14 +72,14 @@ func (repo *CookingRecipeRepo) GetRecipeByID(ctx context.Context, id int) ([]mod
 	recipe, err := repo.getRecipeByID(ctx, tx, id)
 
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("failed to get recipe: %d, errors: %e", id, err))
+		logger.Error(ctx, fmt.Sprintf("failed to get recipe: %d, internalerrors: %e", id, err))
 		return nil, err
 	}
 
 	ingredientsRows, err := repo.getIngredientsRecipeByID(ctx, tx, id)
 
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("failed to get ingredients recipe: %d, errors: %e", id, err))
+		logger.Error(ctx, fmt.Sprintf("failed to get ingredients recipe: %d, internalerrors: %e", id, err))
 		return nil, err
 	}
 
@@ -110,8 +110,8 @@ func (repo *CookingRecipeRepo) getIngredientsRecipeByID(ctx context.Context, tx 
 }
 
 func (repo *CookingRecipeRepo) getRecipeByID(ctx context.Context, tx *sqlx.Tx, id int) ([]models.RecipeModel, error) {
-	q := `SELECT r.name, r.description, r.ready_in_minutes, r.image, r.steps, r.healthscore, r.dish_types, r.diets, r.servings 
-			FROM public.recipes as r WHERE id = $1`
+	q := `SELECT r.name, r.description, r.ready_in_minutes, r.image, r.steps, r.healthscore, 
+       r.dish_types, r.diets, r.servings FROM public.recipes as r WHERE id = $1`
 
 	recipeRows := make([]dao.RecipeTable, 0, 1)
 
@@ -147,7 +147,7 @@ func (repo *CookingRecipeRepo) EndCooking(ctx context.Context, uID uint) error {
 	rowsAffected, err := result.RowsAffected()
 
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("failed to get rows affected by delete with userId: %d, errors: %e", uID, err))
+		logger.Error(ctx, fmt.Sprintf("failed to get rows affected by delete with userId: %d, internalerrors: %e", uID, err))
 		return internalErrors.ErrFailToEndCooking
 	}
 
@@ -165,7 +165,7 @@ func (repo *CookingRecipeRepo) StartCooking(ctx context.Context, uID uint, recip
 	tx, err := repo.storage.BeginTx(ctx, nil)
 	if err != nil {
 		logger.Error(ctx,
-			fmt.Sprintf("failed to begin transaction on start cooking for userId: %d, errors: %e", uID, err),
+			fmt.Sprintf("failed to begin transaction on start cooking for userId: %d, internalerrors: %e", uID, err),
 		)
 		return internalErrors.ErrFailToStartCooking
 	}
@@ -246,7 +246,7 @@ func (repo *CookingRecipeRepo) insertCurrentRecipe(
 
 	if err != nil {
 		logger.Error(ctx,
-			fmt.Sprintf("errors with get rows affected by insert: %d for userId: %d, recipeId: %d",
+			fmt.Sprintf("internalerrors with get rows affected by insert: %d for userId: %d, recipeId: %d",
 				err,
 				uID,
 				recipeID),
@@ -309,7 +309,7 @@ func (repo *CookingRecipeRepo) insertRecipeSteps(
 	rowsAffected, err := result.RowsAffected()
 
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("errors with get rows affected by insert: %d for userId: %d", err, uID))
+		logger.Error(ctx, fmt.Sprintf("internalerrors with get rows affected by insert: %d for userId: %d", err, uID))
 		return internalErrors.ErrFailToStartCooking
 	}
 
@@ -368,7 +368,7 @@ func (repo *CookingRecipeRepo) updateCurrentStepTx(ctx context.Context, tx *sqlx
 	rowsAffected, err := result.RowsAffected()
 
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("errors with get rows affected by update: %d for userId: %d", err, uID))
+		logger.Error(ctx, fmt.Sprintf("internalerrors with get rows affected by update: %d for userId: %d", err, uID))
 		return internalErrors.ErrFailedToUpdateRecipeStep
 	}
 
@@ -410,7 +410,7 @@ func (repo *CookingRecipeRepo) GetPrevRecipeStep(ctx context.Context, uID uint) 
 
 	if err != nil {
 		logger.Error(ctx,
-			fmt.Sprintf("failed to begin transaction on get prev step userId: %d, errors: %d", uID, err),
+			fmt.Sprintf("failed to begin transaction on get prev step userId: %d, internalerrors: %d", uID, err),
 		)
 		return models.CurrentStepRecipeModel{}, internalErrors.ErrFailedToGetPrevStep
 	}
@@ -453,7 +453,7 @@ func (repo *CookingRecipeRepo) GetNextRecipeStep(ctx context.Context, uID uint) 
 
 	if err != nil {
 		logger.Error(ctx,
-			fmt.Sprintf("failed to begin transaction on get next step userId: %d, errors: %d", uID, err),
+			fmt.Sprintf("failed to begin transaction on get next step userId: %d, internalerrors: %d", uID, err),
 		)
 		return models.CurrentStepRecipeModel{}, internalErrors.ErrFailedToGetNextStep
 	}
@@ -506,7 +506,7 @@ func (repo *CookingRecipeRepo) AddTimerToRecipe(
 
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf(
-			"failed to insert timer for userId: %d, step: %d, description: %s, endTime: %s, errors: %s",
+			"failed to insert timer for userId: %d, step: %d, description: %s, endTime: %s, internalerrors: %s",
 			uID,
 			StepNum,
 			description,
@@ -519,8 +519,8 @@ func (repo *CookingRecipeRepo) AddTimerToRecipe(
 
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf(
-			"errors with get rows affected by insert: for userId: %d, "+
-				"step: %d, description: %s, endTime: %s, errors: %s",
+			"internalerrors with get rows affected by insert: for userId: %d, "+
+				"step: %d, description: %s, endTime: %s, internalerrors: %s",
 			uID,
 			StepNum,
 			description,
@@ -532,7 +532,7 @@ func (repo *CookingRecipeRepo) AddTimerToRecipe(
 
 	if rowsAffected == 0 {
 		logger.Error(ctx, fmt.Sprintf(
-			"no row affected by insert timer for userId: %d, step: %d, description: %s, endTime: %s, errors: %s",
+			"no row affected by insert timer for userId: %d, step: %d, description: %s, endTime: %s, internalerrors: %s",
 			uID,
 			StepNum,
 			description,
@@ -552,7 +552,7 @@ func (repo *CookingRecipeRepo) DeleteTimerFromRecipe(ctx context.Context, uID ui
 
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf(
-			"failed to delete timer for userId: %d, step: %d, errors: %s",
+			"failed to delete timer for userId: %d, step: %d, internalerrors: %s",
 			uID,
 			StepNum,
 			err),
@@ -562,7 +562,7 @@ func (repo *CookingRecipeRepo) DeleteTimerFromRecipe(ctx context.Context, uID ui
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("errors with get rows affected by delete: for userId: %d, step: %d",
+		logger.Error(ctx, fmt.Sprintf("internalerrors with get rows affected by delete: for userId: %d, step: %d",
 			uID,
 			StepNum),
 		)

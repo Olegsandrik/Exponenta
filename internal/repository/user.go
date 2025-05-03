@@ -2,11 +2,8 @@ package repository
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
-	internalErrors "github.com/Olegsandrik/Exponenta/internal/errors"
-	"github.com/Olegsandrik/Exponenta/internal/utils"
 	"io"
 	"log"
 	"time"
@@ -16,8 +13,12 @@ import (
 	"golang.org/x/oauth2/vk"
 
 	"github.com/Olegsandrik/Exponenta/config"
+	"github.com/Olegsandrik/Exponenta/internal/adapters/postgres"
+	"github.com/Olegsandrik/Exponenta/internal/adapters/redis"
+	internalErrors "github.com/Olegsandrik/Exponenta/internal/internalerrors"
 	"github.com/Olegsandrik/Exponenta/internal/repository/dao"
 	"github.com/Olegsandrik/Exponenta/internal/usecase/models"
+	"github.com/Olegsandrik/Exponenta/internal/utils"
 	"github.com/Olegsandrik/Exponenta/logger"
 )
 
@@ -31,27 +32,21 @@ type RedisAdapter interface {
 	Delete(key string) error
 }
 
-type PostgresAdapter interface {
-	Exec(ctx context.Context, q string, args ...interface{}) (sql.Result, error)
-	Select(ctx context.Context, dest interface{}, q string, args ...interface{}) error
-	QueryRow(ctx context.Context, query string, args ...interface{}) *sql.Row
-}
-
-type AuthRepo struct {
-	RedisAdapter    RedisAdapter
-	PostgresAdapter PostgresAdapter
+type UserRepo struct {
+	RedisAdapter    *redis.Adapter
+	PostgresAdapter *postgres.Adapter
 	Config          *config.Config
 }
 
-func NewAuthRepo(redisAdapter RedisAdapter, postgresAdapter PostgresAdapter, config *config.Config) *AuthRepo {
-	return &AuthRepo{
+func NewUserRepo(redisAdapter *redis.Adapter, postgresAdapter *postgres.Adapter, config *config.Config) *UserRepo {
+	return &UserRepo{
 		RedisAdapter:    redisAdapter,
 		PostgresAdapter: postgresAdapter,
 		Config:          config,
 	}
 }
 
-func (repo *AuthRepo) CreateSession(ctx context.Context, uID uint) (string, error) {
+func (repo *UserRepo) CreateSession(ctx context.Context, uID uint) (string, error) {
 	timeStart := time.Now()
 	sID := uuid.New().String()
 
@@ -65,7 +60,7 @@ func (repo *AuthRepo) CreateSession(ctx context.Context, uID uint) (string, erro
 	return sID, nil
 }
 
-func (repo *AuthRepo) DeleteSession(ctx context.Context, sID string) error {
+func (repo *UserRepo) DeleteSession(ctx context.Context, sID string) error {
 	timeStart := time.Now()
 	err := repo.RedisAdapter.Delete(sID)
 	if err != nil {
@@ -76,7 +71,7 @@ func (repo *AuthRepo) DeleteSession(ctx context.Context, sID string) error {
 	return nil
 }
 
-func (repo *AuthRepo) SessionExists(ctx context.Context, sID string) bool {
+func (repo *UserRepo) SessionExists(ctx context.Context, sID string) bool {
 	timeStart := time.Now()
 	uID, err := repo.RedisAdapter.Get(sID)
 	if err != nil {
@@ -88,7 +83,7 @@ func (repo *AuthRepo) SessionExists(ctx context.Context, sID string) bool {
 	return uID != 0
 }
 
-func (repo *AuthRepo) GetUserIDBySessionID(ctx context.Context, sID string) (uint, error) {
+func (repo *UserRepo) GetUserIDBySessionID(ctx context.Context, sID string) (uint, error) {
 	timeStart := time.Now()
 	uID, err := repo.RedisAdapter.Get(sID)
 	if err != nil {
@@ -100,7 +95,7 @@ func (repo *AuthRepo) GetUserIDBySessionID(ctx context.Context, sID string) (uin
 	return uID, nil
 }
 
-func (repo *AuthRepo) GetUser(ctx context.Context, login string) (models.User, error) {
+func (repo *UserRepo) GetUser(ctx context.Context, login string) (models.User, error) {
 	q := "SELECT id, password_hash FROM Users WHERE login = $1"
 
 	var userTable []dao.User
@@ -124,7 +119,7 @@ func (repo *AuthRepo) GetUser(ctx context.Context, login string) (models.User, e
 	return userModel[0], nil
 }
 
-func (repo *AuthRepo) CreateUser(ctx context.Context, user models.User) (uint, error) {
+func (repo *UserRepo) CreateUser(ctx context.Context, user models.User) (uint, error) {
 	var userID uint
 	q := `INSERT INTO Users(name, sur_name, login, password_hash) VALUES ($1, $2, $3, $4) returning id`
 
@@ -138,7 +133,7 @@ func (repo *AuthRepo) CreateUser(ctx context.Context, user models.User) (uint, e
 	return userID, nil
 }
 
-func (repo *AuthRepo) IsExistsUserVK(ctx context.Context, VKID uint) (bool, uint) {
+func (repo *UserRepo) IsExistsUserVK(ctx context.Context, VKID uint) (bool, uint) {
 	var userID uint
 	q := `SELECT id FROM Users WHERE vk_id = $1`
 
@@ -154,7 +149,7 @@ func (repo *AuthRepo) IsExistsUserVK(ctx context.Context, VKID uint) (bool, uint
 	return userID != 0, userID
 }
 
-func (repo *AuthRepo) CreateUserVK(ctx context.Context, user models.UserVK) (uint, error) {
+func (repo *UserRepo) CreateUserVK(ctx context.Context, user models.UserVK) (uint, error) {
 	var userID uint
 	q := `INSERT INTO Users(vk_id, name, sur_name) VALUES ($1, $2, $3) returning id`
 
@@ -168,7 +163,7 @@ func (repo *AuthRepo) CreateUserVK(ctx context.Context, user models.UserVK) (uin
 	return userID, nil
 }
 
-func (repo *AuthRepo) DeleteUser(ctx context.Context, uID uint) error {
+func (repo *UserRepo) DeleteUser(ctx context.Context, uID uint) error {
 	result, err := repo.PostgresAdapter.Exec(ctx, "DELETE FROM Users WHERE id = $1", uID)
 
 	if err != nil {
@@ -191,7 +186,7 @@ func (repo *AuthRepo) DeleteUser(ctx context.Context, uID uint) error {
 	return nil
 }
 
-func (repo *AuthRepo) UpdateUser(ctx context.Context, entity string, newVal string, uID uint) error {
+func (repo *UserRepo) UpdateUser(ctx context.Context, entity string, newVal string, uID uint) error {
 	q := fmt.Sprintf("UPDATE Users SET %s = $1 WHERE id = $2", entity)
 	result, err := repo.PostgresAdapter.Exec(ctx, q, newVal, uID)
 	if err != nil {
@@ -228,7 +223,7 @@ func (repo *AuthRepo) UpdateUser(ctx context.Context, entity string, newVal stri
 	return nil
 }
 
-func (repo *AuthRepo) GetUserLoginByID(ctx context.Context, userID uint) (string, error) {
+func (repo *UserRepo) GetUserLoginByID(ctx context.Context, userID uint) (string, error) {
 	q := "SELECT login FROM Users WHERE id = $1"
 	var login string
 	err := repo.PostgresAdapter.QueryRow(ctx, q, userID).Scan(&login)
@@ -248,7 +243,7 @@ func (repo *AuthRepo) GetUserLoginByID(ctx context.Context, userID uint) (string
 	return login, nil
 }
 
-func (repo *AuthRepo) GetUserByID(ctx context.Context, userID uint) (models.User, error) {
+func (repo *UserRepo) GetUserByID(ctx context.Context, userID uint) (models.User, error) {
 	q := "SELECT name, sur_name, created_at FROM Users WHERE id = $1"
 	var userTable []dao.User
 	err := repo.PostgresAdapter.Select(ctx, &userTable, q, userID)
@@ -270,7 +265,7 @@ func (repo *AuthRepo) GetUserByID(ctx context.Context, userID uint) (models.User
 	return userModel[0], nil
 }
 
-func (repo *AuthRepo) GetUserPassword(ctx context.Context, userID uint) (string, error) {
+func (repo *UserRepo) GetUserPassword(ctx context.Context, userID uint) (string, error) {
 	q := "SELECT password_hash FROM Users WHERE id = $1"
 	var userTable []dao.User
 	err := repo.PostgresAdapter.Select(ctx, &userTable, q, userID)
@@ -288,7 +283,7 @@ func (repo *AuthRepo) GetUserPassword(ctx context.Context, userID uint) (string,
 	return userTable[0].PasswordHash, nil
 }
 
-func (repo *AuthRepo) IsVKUser(ctx context.Context, userID uint) bool {
+func (repo *UserRepo) IsVKUser(ctx context.Context, userID uint) bool {
 	q := "SELECT vk_id FROM users WHERE id = $1"
 	var userTable dao.User
 	err := repo.PostgresAdapter.QueryRow(ctx, q, userID).Scan(&userTable.VKID)
@@ -299,13 +294,10 @@ func (repo *AuthRepo) IsVKUser(ctx context.Context, userID uint) bool {
 
 	logger.Info(ctx, fmt.Sprintf("success get vk user with id %d, vk_id: %v", userID, userTable.VKID))
 
-	if !userTable.VKID.Valid {
-		return false
-	}
-	return true
+	return userTable.VKID.Valid
 }
 
-func (repo *AuthRepo) LoginVK(ctx context.Context, data models.VKLoginData) (string, error) {
+func (repo *UserRepo) LoginVK(ctx context.Context, data models.VKLoginData) (string, error) {
 	token, err := utils.ExchangeToken(
 		ctx,
 		data.Code,

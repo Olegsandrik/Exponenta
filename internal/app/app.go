@@ -141,19 +141,28 @@ func InitApp() *App {
 	voiceHandler := delivery.NewVoiceHandler(cfg)
 	voiceHandler.InitRouter(apiRouter)
 
-	// Auth
+	// Auth and Profile
 
-	authRepo := repository.NewAuthRepo(redisAdapter, postgresAdapter, cfg)
-	authUsecase := usecase.NewAuthUsecase(authRepo)
-	authHandler := delivery.NewAuthHandler(authUsecase)
+	userRepo := repository.NewUserRepo(redisAdapter, postgresAdapter, cfg)
+	userUsecase := usecase.NewUserUsecase(userRepo)
+	authHandler := delivery.NewAuthHandler(userUsecase)
 	authHandler.InitRouter(apiRouter)
+	profileHandler := delivery.NewProfileHandler(userUsecase)
+	profileHandler.InitRouter(apiRouter)
+
+	// Favorite
+
+	favoriteRecipeRepo := repository.NewFavoriteRecipeRepository(postgresAdapter)
+	favoriteRecipeUsecase := usecase.NewFavoriteRecipesUsecase(favoriteRecipeRepo)
+	favoriteRecipeHandler := delivery.NewFavoriteRecipesHandler(favoriteRecipeUsecase)
+	favoriteRecipeHandler.InitRouter(apiRouter)
 
 	// Middleware
 
 	r.Use(middleware.CorsMiddleware)
 	r.Use(middleware.PanicMiddleware)
 	r.Use(middleware.LoggingMiddleware)
-	r.Use(middleware.NewAuthMiddleware(authRepo))
+	r.Use(middleware.NewAuthMiddleware(userRepo))
 
 	closers := []io.Closer{postgresAdapter}
 	return &App{

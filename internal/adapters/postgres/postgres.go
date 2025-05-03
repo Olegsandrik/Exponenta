@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log/slog"
 	"time"
@@ -10,6 +11,7 @@ import (
 	"github.com/Olegsandrik/Exponenta/config"
 	"github.com/Olegsandrik/Exponenta/logger"
 
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jmoiron/sqlx"
 
 	// Используется для регистрации драйвера PostgreSQL (pgx).
@@ -92,4 +94,14 @@ func (a *Adapter) QueryxContext(ctx context.Context, query string, args ...inter
 
 func (a *Adapter) QueryRowxContext(ctx context.Context, query string, args ...interface{}) *sqlx.Row {
 	return a.db.QueryRowxContext(ctx, query, args...)
+}
+
+func (a *Adapter) IsDuplicateKeyError(err error) bool {
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr) && pgErr.Code == "23505"
+}
+
+func (a *Adapter) IsNotExistForeignKey(err error) bool {
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr) && pgErr.Code == "23503"
 }

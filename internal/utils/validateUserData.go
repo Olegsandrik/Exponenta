@@ -2,7 +2,7 @@ package utils
 
 import (
 	"github.com/Olegsandrik/Exponenta/internal/delivery/dto"
-	internalErrors "github.com/Olegsandrik/Exponenta/internal/errors"
+	internalErrors "github.com/Olegsandrik/Exponenta/internal/internalerrors"
 
 	"regexp"
 )

@@ -2,8 +2,10 @@ package utils
 
 import (
 	"context"
-	internalErrors "github.com/Olegsandrik/Exponenta/internal/errors"
+
 	"golang.org/x/crypto/bcrypt"
+
+	internalErrors "github.com/Olegsandrik/Exponenta/internal/internalerrors"
 )
 
 type UserID struct{}
