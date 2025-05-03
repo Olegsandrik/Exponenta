@@ -47,7 +47,7 @@ func (h *CookingRecipeHandler) InitRouter(r *mux.Router) {
 		h.router.Handle("", http.HandlerFunc(h.GetCurrentRecipe)).Methods("GET")
 		h.router.Handle("/all", http.HandlerFunc(h.GetAllRecipes)).Methods("GET")
 		h.router.Handle("/timers", http.HandlerFunc(h.GetAllTimersCookingRecipe)).Methods("GET")
-		h.router.Handle("/{id}", http.HandlerFunc(h.GetRecipeByID)).Methods("GET")
+		h.router.Handle("/{recipeID}", http.HandlerFunc(h.GetRecipeByID)).Methods("GET")
 		h.router.Handle("/start", http.HandlerFunc(h.StartCookingRecipe)).Methods("POST")
 		h.router.Handle("/end", http.HandlerFunc(h.EndCookingRecipe)).Methods("POST")
 		h.router.Handle("/next", http.HandlerFunc(h.NextStepCookingRecipe)).Methods("POST")
