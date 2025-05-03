@@ -123,11 +123,11 @@ func (r *FavoriteRecipeRepository) GetFavoriteRecipes(
 	ctx context.Context, userID uint, page int) ([]models.RecipeModel, error) {
 	q := `SELECT id, name, description, image, ready_in_minutes FROM public.recipes WHERE id IN (
     SELECT recipe_id FROM public.favorite_recipes WHERE user_id = $1
-    ) LIMIT 12 OFFSET $2;`
+    ) LIMIT 6 OFFSET $2;`
 
 	recipeRows := make([]dao.RecipeTable, 0)
 
-	err := r.adapter.Select(ctx, &recipeRows, q, userID, page*12-12)
+	err := r.adapter.Select(ctx, &recipeRows, q, userID, page*6-6)
 
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf(
