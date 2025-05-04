@@ -157,6 +157,13 @@ func InitApp() *App {
 	favoriteRecipeHandler := delivery.NewFavoriteRecipesHandler(favoriteRecipeUsecase)
 	favoriteRecipeHandler.InitRouter(apiRouter)
 
+	// Main Page
+
+	mainPageRepo := repository.NewMainPageRepository(postgresAdapter)
+	mainPageUsecase := usecase.NewMainPageUsecase(mainPageRepo)
+	mainPageHandler := delivery.NewMainPageHandler(mainPageUsecase)
+	mainPageHandler.InitRouter(apiRouter)
+
 	// Middleware
 
 	r.Use(middleware.CorsMiddleware)

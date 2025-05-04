@@ -44,6 +44,22 @@ type TimerRecipeModel struct {
 	StepNum int
 }
 
+type Collection struct {
+	Id   int
+	Name string
+}
+
+func ConvertCollectionToDTO(collection []Collection) []dto.Collection {
+	dtoCollection := make([]dto.Collection, len(collection))
+	for i, coll := range collection {
+		dtoCollection[i] = dto.Collection{
+			Id:   coll.Id,
+			Name: coll.Name,
+		}
+	}
+	return dtoCollection
+}
+
 func ConvertTimersToDTO(steps []TimerRecipeModel) []dto.TimerRecipeDto {
 	StepItems := make([]dto.TimerRecipeDto, len(steps))
 	for i, step := range steps {

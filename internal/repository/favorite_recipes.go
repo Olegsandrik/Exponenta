@@ -125,9 +125,9 @@ func (r *FavoriteRecipeRepository) GetFavoriteRecipes(
     SELECT recipe_id FROM public.favorite_recipes WHERE user_id = $1
     ) LIMIT 6 OFFSET $2;`
 
-	recipeRows := make([]dao.RecipeTable, 0)
+	recipeRows := make([]dao.RecipeTable, 0, pageSizeConst)
 
-	err := r.adapter.Select(ctx, &recipeRows, q, userID, page*6-6)
+	err := r.adapter.Select(ctx, &recipeRows, q, userID, page*pageSizeConst-pageSizeConst)
 
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf(

@@ -12,6 +12,13 @@ import (
 	"github.com/Olegsandrik/Exponenta/internal/utils"
 )
 
+const (
+	surNameConst      = "sur_name"
+	loginConst        = "login"
+	nameConst         = "name"
+	passwordHashConst = "password_hash"
+)
+
 type UserRepo interface {
 	CreateSession(ctx context.Context, uID uint) (string, error)
 	DeleteSession(ctx context.Context, sID string) error
@@ -121,7 +128,7 @@ func (a *UserUsecase) UpdatePassword(ctx context.Context, userID uint, password 
 		return err
 	}
 
-	return a.repo.UpdateUser(ctx, "password_hash", passwordHash, userID)
+	return a.repo.UpdateUser(ctx, passwordHashConst, passwordHash, userID)
 }
 
 func (a *UserUsecase) UpdateUserName(ctx context.Context, userID uint, newUsername string) error {
@@ -138,7 +145,7 @@ func (a *UserUsecase) UpdateUserName(ctx context.Context, userID uint, newUserna
 		return err
 	}
 
-	return a.repo.UpdateUser(ctx, "name", newUsername, userID)
+	return a.repo.UpdateUser(ctx, nameConst, newUsername, userID)
 }
 
 func (a *UserUsecase) UpdateUserSurname(ctx context.Context, userID uint, newUserSurName string) error {
@@ -155,7 +162,7 @@ func (a *UserUsecase) UpdateUserSurname(ctx context.Context, userID uint, newUse
 		return err
 	}
 
-	return a.repo.UpdateUser(ctx, "sur_name", newUserSurName, userID)
+	return a.repo.UpdateUser(ctx, surNameConst, newUserSurName, userID)
 }
 
 func (a *UserUsecase) UpdateUserLogin(ctx context.Context, userID uint, newLogin string) error {
@@ -167,7 +174,7 @@ func (a *UserUsecase) UpdateUserLogin(ctx context.Context, userID uint, newLogin
 		return internalErrors.ErrEmptyLogin
 	}
 
-	return a.repo.UpdateUser(ctx, "login", newLogin, userID)
+	return a.repo.UpdateUser(ctx, loginConst, newLogin, userID)
 }
 
 func (a *UserUsecase) DeleteProfile(ctx context.Context, userID uint) error {

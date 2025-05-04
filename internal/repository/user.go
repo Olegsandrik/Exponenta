@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"time"
 
 	"github.com/google/uuid"
@@ -324,7 +323,6 @@ func (repo *UserRepo) LoginVK(ctx context.Context, data models.VKLoginData) (str
 	defer resp.Body.Close()
 
 	body, _ := io.ReadAll(resp.Body)
-	log.Println(string(body))
 	var respData struct {
 		Response []struct {
 			FirstName string `json:"first_name"`

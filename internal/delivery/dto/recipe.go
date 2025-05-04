@@ -53,6 +53,19 @@ type GenerationRecipeDto struct {
 	Ingredients []string `json:"ingredients"`
 }
 
+type DishType struct {
+	Name string `json:"dishType"`
+}
+
+type Diet struct {
+	Name string `json:"Diet"`
+}
+
+type RecipePage struct {
+	Recipes     []RecipeDto `json:"recipes"`
+	LastPageNum int         `json:"lastPageNum"`
+}
+
 func GetCookingRecipeData(r *http.Request) (RecipeDto, error) {
 	var recipe RecipeDto
 
@@ -87,4 +100,28 @@ func GetTimerRecipeData(r *http.Request) (TimerRecipeDataDto, error) {
 	}
 
 	return timer, nil
+}
+
+func GetDishTypeData(r *http.Request) (string, error) {
+	var dishType DishType
+
+	err := json.NewDecoder(r.Body).Decode(&dishType)
+
+	if err != nil {
+		return "", err
+	}
+
+	return dishType.Name, nil
+}
+
+func GetDietData(r *http.Request) (string, error) {
+	var diet Diet
+
+	err := json.NewDecoder(r.Body).Decode(&diet)
+
+	if err != nil {
+		return "", err
+	}
+
+	return diet.Name, nil
 }

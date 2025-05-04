@@ -28,6 +28,15 @@ type RecipeTable struct {
 	UserIngredients json.RawMessage `db:"user_ingredients" json:"user_ingredients,omitempty"`
 }
 
+type MainPageRecipeTable struct {
+	ID          int    `db:"id"`
+	Name        string `db:"name"`
+	Desc        string `db:"description"`
+	Img         string `db:"image"`
+	CookingTime int    `db:"ready_in_minutes"`
+	TotalNum    int    `db:"total_count"`
+}
+
 type CurrentRecipeTable struct {
 	ID          int             `db:"recipe_id"`
 	Name        string          `db:"name"`
@@ -159,6 +168,20 @@ func ConvertCurrentStepRecipeToDAO(cs models.CurrentStepRecipeModel) CurrentReci
 		Equipment:   cs.Equipment,
 		Length:      cs.Length,
 	}
+}
+
+func ConvertMainPageRecipeTableToRecipeModel(rt []MainPageRecipeTable) []models.RecipeModel {
+	RecipeItems := make([]models.RecipeModel, 0, len(rt))
+	for _, r := range rt {
+		RecipeItems = append(RecipeItems, models.RecipeModel{
+			ID:          r.ID,
+			Name:        r.Name,
+			Desc:        r.Desc,
+			Img:         r.Img,
+			CookingTime: r.CookingTime,
+		})
+	}
+	return RecipeItems
 }
 
 func ConvertDaoToRecipe(rt []RecipeTable) []models.RecipeModel {
