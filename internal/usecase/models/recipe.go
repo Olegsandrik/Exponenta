@@ -45,7 +45,7 @@ type TimerRecipeModel struct {
 }
 
 type Collection struct {
-	Id   int
+	ID   int
 	Name string
 }
 
@@ -53,7 +53,7 @@ func ConvertCollectionToDTO(collection []Collection) []dto.Collection {
 	dtoCollection := make([]dto.Collection, len(collection))
 	for i, coll := range collection {
 		dtoCollection[i] = dto.Collection{
-			Id:   coll.Id,
+			ID:   coll.ID,
 			Name: coll.Name,
 		}
 	}

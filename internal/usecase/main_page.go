@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+
 	"github.com/Olegsandrik/Exponenta/internal/delivery/dto"
 	"github.com/Olegsandrik/Exponenta/internal/usecase/models"
 )
@@ -38,6 +39,7 @@ func (u *MainPageUsecase) GetRecipesByDiet(ctx context.Context, diet string, pag
 
 	return dto.RecipePage{Recipes: models.ConvertRecipeToDto(recipes), LastPageNum: lastPageNum}, nil
 }
+
 func (u *MainPageUsecase) GetCollectionByID(ctx context.Context, collectionID int, page int) (dto.RecipePage, error) {
 	recipes, lastPageNum, err := u.repository.GetCollectionByID(ctx, collectionID, page)
 	if err != nil {
@@ -46,6 +48,7 @@ func (u *MainPageUsecase) GetCollectionByID(ctx context.Context, collectionID in
 
 	return dto.RecipePage{Recipes: models.ConvertRecipeToDto(recipes), LastPageNum: lastPageNum}, nil
 }
+
 func (u *MainPageUsecase) GetAllCollections(ctx context.Context) ([]dto.Collection, error) {
 	collections, err := u.repository.GetAllCollections(ctx)
 	if err != nil {

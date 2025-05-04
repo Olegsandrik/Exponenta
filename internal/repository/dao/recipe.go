@@ -37,6 +37,11 @@ type MainPageRecipeTable struct {
 	TotalNum    int    `db:"total_count"`
 }
 
+type CollectionTable struct {
+	ID   int    `db:"id"`
+	Name string `db:"name"`
+}
+
 type CurrentRecipeTable struct {
 	ID          int             `db:"recipe_id"`
 	Name        string          `db:"name"`
@@ -269,4 +274,15 @@ func ConvertGeneratedRecipeToRecipeModels(gr []GeneratedRecipe) []models.RecipeM
 		})
 	}
 	return RecipeItems
+}
+
+func ConvertCollectionTableToModel(collectionTable []CollectionTable) []models.Collection {
+	recipeItems := make([]models.Collection, 0, len(collectionTable))
+	for _, r := range collectionTable {
+		recipeItems = append(recipeItems, models.Collection{
+			ID:   r.ID,
+			Name: r.Name,
+		})
+	}
+	return recipeItems
 }

@@ -2,13 +2,21 @@ package delivery
 
 import (
 	"context"
-	"github.com/Olegsandrik/Exponenta/internal/delivery/dto"
-	"github.com/Olegsandrik/Exponenta/internal/utils"
-	"github.com/gorilla/mux"
+	"errors"
 	"net/http"
+
+	"github.com/gorilla/mux"
+
+	"github.com/Olegsandrik/Exponenta/internal/delivery/dto"
+	internalErrors "github.com/Olegsandrik/Exponenta/internal/internalerrors"
+	"github.com/Olegsandrik/Exponenta/internal/utils"
 )
 
-const collectionID = "collectionID"
+const (
+	collectionID  = "collectionID"
+	dishTypeConst = "dishType"
+	dietConst     = "diet"
+)
 
 type MainPageUsecase interface {
 	GetRecipesByDishType(ctx context.Context, dishType string, page int) (dto.RecipePage, error)
@@ -87,6 +95,21 @@ func (h *MainPageHandler) GetCollectionByID(w http.ResponseWriter, r *http.Reque
 
 	recipePage, err := h.usecase.GetCollectionByID(ctx, collID, pageParam)
 	if err != nil {
+		if errors.Is(err, internalErrors.ErrZeroRowsGet) {
+			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
+				Status: http.StatusNotFound,
+				Msg:    err.Error(),
+				MsgRus: "ни одного рецепта в коллекции не найдено",
+			})
+			return
+		} else if errors.Is(err, internalErrors.ErrGetZeroRowsWithPageGreaterThanOne) {
+			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
+				Status: http.StatusNotFound,
+				Msg:    err.Error(),
+				MsgRus: "больше рецептов в коллекции нет",
+			})
+			return
+		}
 		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusInternalServerError,
 			Msg:    err.Error(),
@@ -114,7 +137,7 @@ func (h *MainPageHandler) GetRecipesByDishType(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	dishType, err := dto.GetDishTypeData(r)
+	dishType, err := dto.GetStringQueryParam(r, dishTypeConst)
 	if err != nil {
 		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusBadRequest,
@@ -126,6 +149,21 @@ func (h *MainPageHandler) GetRecipesByDishType(w http.ResponseWriter, r *http.Re
 
 	recipePage, err := h.usecase.GetRecipesByDishType(ctx, dishType, pageParam)
 	if err != nil {
+		if errors.Is(err, internalErrors.ErrZeroRowsGet) {
+			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
+				Status: http.StatusNotFound,
+				Msg:    err.Error(),
+				MsgRus: "ни одного рецепта по данному типу не найдено",
+			})
+			return
+		} else if errors.Is(err, internalErrors.ErrGetZeroRowsWithPageGreaterThanOne) {
+			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
+				Status: http.StatusNotFound,
+				Msg:    err.Error(),
+				MsgRus: "больше рецептов данного типа нет",
+			})
+			return
+		}
 		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusInternalServerError,
 			Msg:    err.Error(),
@@ -153,7 +191,7 @@ func (h *MainPageHandler) GetRecipesByDiet(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	diet, err := dto.GetDietData(r)
+	diet, err := dto.GetStringQueryParam(r, dietConst)
 	if err != nil {
 		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusBadRequest,
@@ -165,6 +203,21 @@ func (h *MainPageHandler) GetRecipesByDiet(w http.ResponseWriter, r *http.Reques
 
 	recipePage, err := h.usecase.GetRecipesByDiet(ctx, diet, pageParam)
 	if err != nil {
+		if errors.Is(err, internalErrors.ErrZeroRowsGet) {
+			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
+				Status: http.StatusNotFound,
+				Msg:    err.Error(),
+				MsgRus: "ни одного рецепта данной диеты не найдено",
+			})
+			return
+		} else if errors.Is(err, internalErrors.ErrGetZeroRowsWithPageGreaterThanOne) {
+			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
+				Status: http.StatusNotFound,
+				Msg:    err.Error(),
+				MsgRus: "больше рецептов данной диеты нет",
+			})
+			return
+		}
 		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusInternalServerError,
 			Msg:    err.Error(),

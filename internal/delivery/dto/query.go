@@ -35,3 +35,12 @@ func GetIntURLParam(r *http.Request, name string) (int, error) {
 
 	return param, nil
 }
+
+func GetStringQueryParam(r *http.Request, name string) (string, error) {
+	dishTypeParam := r.URL.Query().Get(name)
+
+	if dishTypeParam == "" {
+		return "", internalErrors.ErrParamNotFound
+	}
+	return dishTypeParam, nil
+}

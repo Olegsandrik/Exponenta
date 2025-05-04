@@ -69,4 +69,5 @@ var (
 	ErrParamNotFound                     = fmt.Errorf("param not found")
 	ErrParamNotInteger                   = fmt.Errorf("param is not an integer")
 	ErrGetZeroRowsWithPageGreaterThanOne = fmt.Errorf("get zero rows with page greater than one")
+	ErrGetCollections                    = fmt.Errorf("failed to get collections")
 )
