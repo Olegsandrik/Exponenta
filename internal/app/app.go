@@ -108,6 +108,13 @@ func InitApp() *App {
 
 	server := InitServer(r, cfg)
 
+	// Favorite
+
+	favoriteRecipeRepo := repository.NewFavoriteRecipeRepository(postgresAdapter)
+	favoriteRecipeUsecase := usecase.NewFavoriteRecipesUsecase(favoriteRecipeRepo)
+	favoriteRecipeHandler := delivery.NewFavoriteRecipesHandler(favoriteRecipeUsecase)
+	favoriteRecipeHandler.InitRouter(apiRouter)
+
 	// Images
 
 	imageRepo := repository.NewImageRepository(minioAdapter)
@@ -118,7 +125,7 @@ func InitApp() *App {
 	// Cooking recipe
 
 	cookingRecipeRepo := repository.NewCookingRecipeRepo(postgresAdapter)
-	cookingRecipeUsecase := usecase.NewCookingRecipeUsecase(cookingRecipeRepo)
+	cookingRecipeUsecase := usecase.NewCookingRecipeUsecase(cookingRecipeRepo, favoriteRecipeRepo)
 	cookingRecipeHandler := delivery.NewCookingRecipeHandler(cookingRecipeUsecase)
 	cookingRecipeHandler.InitRouter(apiRouter)
 
@@ -132,7 +139,7 @@ func InitApp() *App {
 	// Search
 
 	searchRepo := repository.NewSearchRepository(elasticsearchAdapter, postgresAdapter)
-	searchUsecase := usecase.NewSearchUsecase(searchRepo)
+	searchUsecase := usecase.NewSearchUsecase(searchRepo, favoriteRecipeRepo)
 	searchHandler := delivery.NewSearchHandler(searchUsecase)
 	searchHandler.InitRouter(apiRouter)
 
@@ -150,17 +157,10 @@ func InitApp() *App {
 	profileHandler := delivery.NewProfileHandler(userUsecase)
 	profileHandler.InitRouter(apiRouter)
 
-	// Favorite
-
-	favoriteRecipeRepo := repository.NewFavoriteRecipeRepository(postgresAdapter)
-	favoriteRecipeUsecase := usecase.NewFavoriteRecipesUsecase(favoriteRecipeRepo)
-	favoriteRecipeHandler := delivery.NewFavoriteRecipesHandler(favoriteRecipeUsecase)
-	favoriteRecipeHandler.InitRouter(apiRouter)
-
 	// Main Page
 
 	mainPageRepo := repository.NewMainPageRepository(postgresAdapter)
-	mainPageUsecase := usecase.NewMainPageUsecase(mainPageRepo)
+	mainPageUsecase := usecase.NewMainPageUsecase(mainPageRepo, favoriteRecipeRepo)
 	mainPageHandler := delivery.NewMainPageHandler(mainPageUsecase)
 	mainPageHandler.InitRouter(apiRouter)
 

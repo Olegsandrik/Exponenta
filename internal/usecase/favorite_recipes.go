@@ -12,6 +12,7 @@ type FavoriteRecipesRepo interface {
 	AddRecipeToFavorite(ctx context.Context, userID uint, recipeID int) error
 	DeleteRecipeFromFavorite(ctx context.Context, userID uint, recipeID int) error
 	GetFavoriteRecipes(ctx context.Context, userID uint, page int) ([]models.RecipeModel, error)
+	GetAllIDFavoriteRecipes(ctx context.Context, userID uint) (map[int]struct{}, error)
 }
 
 type FavoriteRecipesUsecase struct {

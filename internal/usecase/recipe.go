@@ -28,12 +28,14 @@ type CookingRecipeRepo interface {
 }
 
 type CookingRecipeUsecase struct {
-	repo CookingRecipeRepo
+	repo                CookingRecipeRepo
+	favoriteRecipesRepo FavoriteRecipesRepo
 }
 
-func NewCookingRecipeUsecase(repo CookingRecipeRepo) *CookingRecipeUsecase {
+func NewCookingRecipeUsecase(repo CookingRecipeRepo, favoriteRecipesRepo FavoriteRecipesRepo) *CookingRecipeUsecase {
 	return &CookingRecipeUsecase{
-		repo: repo,
+		repo:                repo,
+		favoriteRecipesRepo: favoriteRecipesRepo,
 	}
 }
 
@@ -46,9 +48,26 @@ func (u *CookingRecipeUsecase) GetAllRecipe(ctx context.Context, num int) ([]dto
 
 	utils.SanitizeRecipeDescription(recipeModels)
 
-	recipeDto := models.ConvertRecipeToDto(recipeModels)
+	recipeDTO := models.ConvertRecipeToDto(recipeModels)
 
-	return recipeDto, nil
+	uID, _ := utils.GetUserIDFromContext(ctx)
+	if uID == 0 {
+		return recipeDTO, nil
+	}
+
+	favoriteIDsSet, err := u.favoriteRecipesRepo.GetAllIDFavoriteRecipes(ctx, uID)
+	if err != nil {
+		return []dto.RecipeDto{}, err
+	}
+
+	for i := 0; i < len(recipeDTO); i++ {
+		_, ok := favoriteIDsSet[recipeDTO[i].ID]
+		if ok {
+			recipeDTO[i].IsFavorite = true
+		}
+	}
+
+	return recipeDTO, nil
 }
 
 func (u *CookingRecipeUsecase) GetRecipeByID(ctx context.Context, id int) (dto.RecipeDto, error) {

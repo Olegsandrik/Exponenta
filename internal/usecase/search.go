@@ -18,11 +18,12 @@ type SearchRepo interface {
 }
 
 type SearchUsecase struct {
-	searchRepo SearchRepo
+	searchRepo          SearchRepo
+	favoriteRecipesRepo FavoriteRecipesRepo
 }
 
-func NewSearchUsecase(searchRepo SearchRepo) *SearchUsecase {
-	return &SearchUsecase{searchRepo: searchRepo}
+func NewSearchUsecase(searchRepo SearchRepo, favoriteRecipesRepo FavoriteRecipesRepo) *SearchUsecase {
+	return &SearchUsecase{searchRepo: searchRepo, favoriteRecipesRepo: favoriteRecipesRepo}
 }
 
 func (s *SearchUsecase) Search(
@@ -38,6 +39,23 @@ func (s *SearchUsecase) Search(
 	}
 
 	searchResult := models.ConvertSearchResponseToDto(searchResultModel)
+
+	uID, err := utils.GetUserIDFromContext(ctx)
+	if uID == 0 {
+		return searchResult, nil
+	}
+
+	favoriteIDsSet, err := s.favoriteRecipesRepo.GetAllIDFavoriteRecipes(ctx, uID)
+	if err != nil {
+		return dto.SearchResponseDto{}, err
+	}
+
+	for i := 0; i < len(searchResult.Recipes); i++ {
+		_, ok := favoriteIDsSet[searchResult.Recipes[i].ID]
+		if ok {
+			searchResult.Recipes[i].IsFavorite = true
+		}
+	}
 
 	return searchResult, nil
 }

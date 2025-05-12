@@ -152,3 +152,28 @@ func (r *FavoriteRecipeRepository) GetFavoriteRecipes(
 
 	return recipeItems, nil
 }
+
+func (r *FavoriteRecipeRepository) GetAllIDFavoriteRecipes(
+	ctx context.Context, userID uint) (map[int]struct{}, error) {
+	q := `SELECT recipe_id FROM public.favorite_recipes WHERE user_id = $1;`
+
+	idRows := make([]int, 0)
+
+	err := r.adapter.Select(ctx, &idRows, q, userID)
+
+	if err != nil {
+		logger.Error(ctx, fmt.Sprintf(
+			"error getting recipe rows: %s, userID: %d", err.Error(), userID))
+		return nil, internalErrors.ErrFailToGetRecipes
+	}
+
+	logger.Info(ctx, fmt.Sprintf("select %d recipes for userID: %d, %d", len(idRows), userID, idRows))
+
+	favoriteIDsSet := make(map[int]struct{})
+
+	for _, id := range idRows {
+		favoriteIDsSet[id] = struct{}{}
+	}
+
+	return favoriteIDsSet, nil
+}

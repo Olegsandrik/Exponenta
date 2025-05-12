@@ -20,6 +20,7 @@ type RecipeDto struct {
 	Steps           json.RawMessage `json:"steps,omitempty"`
 	Query           string          `json:"query,omitempty"`
 	UserIngredients json.RawMessage `json:"userIngredients,omitempty"`
+	IsFavorite      bool            `json:"isFavorite,omitempty"`
 }
 
 type CurrentRecipeDto struct {
