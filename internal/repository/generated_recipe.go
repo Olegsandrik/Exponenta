@@ -77,7 +77,7 @@ const (
 			],
 			"length": {
 				"number": 5,
-				"unit": "минут"
+				"unit": "minutes" // only minutes
 			}
 		},
 		{
@@ -165,7 +165,7 @@ const (
 			],
 			"length": {
 				"number": 5,
-				"unit": "минут"
+				"unit": "minutes" // only minutes
 			}
 		},
 		{
