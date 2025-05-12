@@ -342,26 +342,6 @@ func (h *ProfileHandler) EditPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cookie, err := r.Cookie("session_id")
-	if err != nil {
-		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
-			Status: http.StatusUnauthorized,
-			Msg:    "failed to get cookie",
-			MsgRus: "ошибка получения cookie",
-		})
-		return
-	}
-
-	err = h.profileUsecase.Logout(ctx, cookie.Value)
-	if err != nil {
-		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
-			Status: http.StatusInternalServerError,
-			Msg:    err.Error(),
-			MsgRus: "не получилось выйти из аккаунта пользователя",
-		})
-		return
-	}
-
 	utils.JSONResponse(ctx, w, http.StatusOK, utils.SuccessResponse{
 		Status: http.StatusOK,
 		Data:   nil,
