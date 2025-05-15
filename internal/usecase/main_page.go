@@ -2,10 +2,10 @@ package usecase
 
 import (
 	"context"
-	"github.com/Olegsandrik/Exponenta/internal/utils"
 
 	"github.com/Olegsandrik/Exponenta/internal/delivery/dto"
 	"github.com/Olegsandrik/Exponenta/internal/usecase/models"
+	"github.com/Olegsandrik/Exponenta/internal/utils"
 )
 
 type MainPageRepository interface {
@@ -30,7 +30,7 @@ func (u *MainPageUsecase) GetRecipesByDishType(ctx context.Context, dishType str
 		return dto.RecipePage{}, err
 	}
 
-	uID, err := utils.GetUserIDFromContext(ctx)
+	uID, _ := utils.GetUserIDFromContext(ctx)
 	if uID == 0 {
 		return dto.RecipePage{Recipes: models.ConvertRecipeToDto(recipes), LastPageNum: lastPageNum}, nil
 	}
@@ -58,7 +58,7 @@ func (u *MainPageUsecase) GetRecipesByDiet(ctx context.Context, diet string, pag
 		return dto.RecipePage{}, err
 	}
 
-	uID, err := utils.GetUserIDFromContext(ctx)
+	uID, _ := utils.GetUserIDFromContext(ctx)
 	if uID == 0 {
 		return dto.RecipePage{Recipes: models.ConvertRecipeToDto(recipes), LastPageNum: lastPageNum}, nil
 	}
@@ -86,7 +86,7 @@ func (u *MainPageUsecase) GetCollectionByID(ctx context.Context, collectionID in
 		return dto.RecipePage{}, err
 	}
 
-	uID, err := utils.GetUserIDFromContext(ctx)
+	uID, _ := utils.GetUserIDFromContext(ctx)
 	if uID == 0 {
 		return dto.RecipePage{Recipes: models.ConvertRecipeToDto(recipes), LastPageNum: lastPageNum}, nil
 	}

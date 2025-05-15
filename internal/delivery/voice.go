@@ -35,7 +35,7 @@ func NewVoiceHandler(cfg *config.Config) *VoiceHandler {
 func (h *VoiceHandler) InitRouter(r *mux.Router) {
 	h.router = r.PathPrefix("/voice").Subrouter()
 	{
-		h.router.Handle("", http.HandlerFunc(h.ServeHTTP)).Methods("POST")
+		h.router.Handle("", http.HandlerFunc(h.ServeHTTP)).Methods(http.MethodPost)
 	}
 }
 

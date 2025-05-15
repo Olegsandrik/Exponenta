@@ -3,6 +3,7 @@ package dto
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 )
 
 type RecipeDto struct {
@@ -21,12 +22,15 @@ type RecipeDto struct {
 	Query           string          `json:"query,omitempty"`
 	UserIngredients json.RawMessage `json:"userIngredients,omitempty"`
 	IsFavorite      bool            `json:"isFavorite,omitempty"`
+	IsGenerated     bool            `json:"isGenerated,omitempty"`
+	CreatedAt       *time.Time      `json:"createdAt,omitempty"`
 }
 
 type CurrentRecipeDto struct {
 	ID          int                  `json:"id,omitempty"`
 	Name        string               `json:"name,omitempty"`
 	TotalSteps  int                  `json:"totalSteps,omitempty"`
+	IsGenerated bool                 `json:"isGenerated,omitempty"`
 	CurrentStep CurrentStepRecipeDto `json:"currentStep,omitempty"`
 }
 

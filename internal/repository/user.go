@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	APIURL = "https://api.vk.com/method/users.get?fields=photo_50,about&access_token=%s&v=5.131"
+	VKAPIURL = "https://api.vk.com/method/users.get?fields=photo_50,about&access_token=%s&v=5.131"
 )
 
 type RedisAdapter interface {
@@ -316,7 +316,7 @@ func (repo *UserRepo) LoginVK(ctx context.Context, data models.VKLoginData) (str
 	}
 
 	client := conf.Client(ctx, token)
-	resp, err := client.Get(fmt.Sprintf(APIURL, token.AccessToken))
+	resp, err := client.Get(fmt.Sprintf(VKAPIURL, token.AccessToken))
 	if err != nil {
 		return "", internalErrors.ErrFailedToGetDataByToken
 	}

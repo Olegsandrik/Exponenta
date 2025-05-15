@@ -37,11 +37,11 @@ func NewAuthHandler(authUsecase AuthUsecase) *AuthHandler {
 func (h *AuthHandler) InitRouter(r *mux.Router) {
 	h.router = r.PathPrefix("/auth").Subrouter()
 	{
-		h.router.Handle("/login", http.HandlerFunc(h.Login)).Methods("POST", "OPTIONS")
-		h.router.Handle("/logout", http.HandlerFunc(h.Logout)).Methods("POST", "OPTIONS")
-		h.router.Handle("/signup", http.HandlerFunc(h.Signup)).Methods("POST")
+		h.router.Handle("/login", http.HandlerFunc(h.Login)).Methods(http.MethodPost, http.MethodOptions)
+		h.router.Handle("/logout", http.HandlerFunc(h.Logout)).Methods(http.MethodPost, http.MethodOptions)
+		h.router.Handle("/signup", http.HandlerFunc(h.Signup)).Methods(http.MethodPost)
 		h.router.Handle("/login/vk",
-			http.HandlerFunc(h.LoginWithVK)).Methods("POST", "OPTIONS")
+			http.HandlerFunc(h.LoginWithVK)).Methods(http.MethodPost, http.MethodOptions)
 	}
 }
 
@@ -49,7 +49,7 @@ func (h *AuthHandler) Signup(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	signupData, err := dto.GetSignupData(r)
 	if err != nil {
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusBadRequest,
 			Msg:    "invalid signup data",
 			MsgRus: "некорректные данные регистрации",
@@ -60,7 +60,7 @@ func (h *AuthHandler) Signup(w http.ResponseWriter, r *http.Request) {
 	_, sID, err := h.authUsecase.SignUp(ctx, signupData)
 	if err != nil {
 		if errors.Is(err, internalErrors.ErrUserWithThisLoginAlreadyExists) {
-			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 				Status: http.StatusBadRequest,
 				Msg:    err.Error(),
 				MsgRus: "пользователь с таким логином уже существует",
@@ -90,7 +90,7 @@ func (h *AuthHandler) Signup(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusInternalServerError,
 			Msg:    err.Error(),
 			MsgRus: "не получилось зарегистрироваться",
@@ -109,7 +109,7 @@ func (h *AuthHandler) Signup(w http.ResponseWriter, r *http.Request) {
 
 	http.SetCookie(w, &cookie)
 
-	utils.JSONResponse(ctx, w, 200, utils.SuccessResponse{
+	utils.JSONResponse(ctx, w, http.StatusOK, utils.SuccessResponse{
 		Status: http.StatusOK,
 		Data:   nil,
 	})
@@ -130,14 +130,14 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	sID, err := h.authUsecase.Login(ctx, loginData.Login, loginData.Password)
 	if err != nil {
 		if errors.Is(err, internalErrors.ErrFailToGetUser) {
-			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 				Status: http.StatusBadRequest,
 				Msg:    err.Error(),
 				MsgRus: "пользователя с таким логином не существует",
 			})
 			return
 		} else if errors.Is(err, internalErrors.ErrInvalidPassword) {
-			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 				Status: http.StatusBadRequest,
 				Msg:    err.Error(),
 				MsgRus: "неверный пароль для данного логина",

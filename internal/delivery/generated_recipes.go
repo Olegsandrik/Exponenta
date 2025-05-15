@@ -41,17 +41,17 @@ func NewGeneratedHandler(usecase GeneratedUsecase) *GeneratedHandler {
 func (h *GeneratedHandler) InitRouter(r *mux.Router) {
 	h.router = r.PathPrefix("/generate").Subrouter()
 	{
-		h.router.Handle("/all", http.HandlerFunc(h.GetAllGeneratedRecipes)).Methods("GET")
+		h.router.Handle("/all", http.HandlerFunc(h.GetAllGeneratedRecipes)).Methods(http.MethodGet)
 		h.router.Handle("/{recipeID}/history",
-			http.HandlerFunc(h.GetGeneratedRecipeHistoryByID)).Methods("GET")
-		h.router.Handle("/{recipeID}", http.HandlerFunc(h.GetGeneratedRecipeByID)).Methods("GET")
-		h.router.Handle("/make", http.HandlerFunc(h.CreateGeneratedRecipe)).Methods("POST")
+			http.HandlerFunc(h.GetGeneratedRecipeHistoryByID)).Methods(http.MethodGet)
+		h.router.Handle("/{recipeID}", http.HandlerFunc(h.GetGeneratedRecipeByID)).Methods(http.MethodGet)
+		h.router.Handle("/make", http.HandlerFunc(h.CreateGeneratedRecipe)).Methods(http.MethodPost)
 		h.router.Handle("/{recipeID}/modern/{versionID}",
-			http.HandlerFunc(h.UpgradeGeneratedRecipeByIDByVersion)).Methods("POST")
+			http.HandlerFunc(h.UpgradeGeneratedRecipeByIDByVersion)).Methods(http.MethodPost)
 		h.router.Handle("/{recipeID}/main/{versionID}",
-			http.HandlerFunc(h.SetNewMainVersionGeneratedRecipe)).Methods("POST")
+			http.HandlerFunc(h.SetNewMainVersionGeneratedRecipe)).Methods(http.MethodPost)
 		h.router.Handle("/{recipeID}/start",
-			http.HandlerFunc(h.StartCookingGeneratedRecipe)).Methods("POST")
+			http.HandlerFunc(h.StartCookingGeneratedRecipe)).Methods(http.MethodPost)
 	}
 }
 
@@ -60,7 +60,7 @@ func (h *GeneratedHandler) GetAllGeneratedRecipes(w http.ResponseWriter, r *http
 	numParam, err := dto.GetIntQueryParam(r, num)
 
 	if err != nil {
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusBadRequest,
 			Msg:    err.Error(),
 			MsgRus: "некорректный параметр num",
@@ -71,21 +71,21 @@ func (h *GeneratedHandler) GetAllGeneratedRecipes(w http.ResponseWriter, r *http
 	recipesData, err := h.usecase.GetAllRecipes(ctx, numParam)
 	if err != nil {
 		if errors.Is(err, internalErrors.ErrUserNotAuth) {
-			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 				Status: http.StatusUnauthorized,
 				Msg:    internalErrors.ErrUserNotAuth.Error(),
 				MsgRus: "пользователь не авторизован",
 			})
 			return
 		} else if errors.Is(err, internalErrors.ErrZeroRowsGet) {
-			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 				Status: http.StatusNotFound,
 				Msg:    internalErrors.ErrZeroRowsGet.Error(),
 				MsgRus: "на данный момент у вас нет сгенерированных рецептов",
 			})
 			return
 		}
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusInternalServerError,
 			Msg:    err.Error(),
 			MsgRus: "не получилось получить сгенерированные рецепты",
@@ -93,7 +93,7 @@ func (h *GeneratedHandler) GetAllGeneratedRecipes(w http.ResponseWriter, r *http
 		return
 	}
 
-	utils.JSONResponse(ctx, w, 200, utils.SuccessResponse{
+	utils.JSONResponse(ctx, w, http.StatusOK, utils.SuccessResponse{
 		Status: http.StatusOK,
 		Data:   recipesData,
 	})
@@ -104,7 +104,7 @@ func (h *GeneratedHandler) GetGeneratedRecipeByID(w http.ResponseWriter, r *http
 
 	recipeIDParam, err := dto.GetIntURLParam(r, recipeID)
 	if err != nil {
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusBadRequest,
 			Msg:    err.Error(),
 			MsgRus: "некорректный параметр recipeID",
@@ -116,14 +116,14 @@ func (h *GeneratedHandler) GetGeneratedRecipeByID(w http.ResponseWriter, r *http
 
 	if err != nil {
 		if errors.Is(err, internalErrors.ErrUserNotAuth) {
-			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 				Status: http.StatusUnauthorized,
 				Msg:    internalErrors.ErrUserNotAuth.Error(),
 				MsgRus: "пользователь не авторизован",
 			})
 			return
 		}
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusInternalServerError,
 			Msg:    err.Error(),
 			MsgRus: "не получилось получить сгенерированный рецепт",
@@ -131,7 +131,7 @@ func (h *GeneratedHandler) GetGeneratedRecipeByID(w http.ResponseWriter, r *http
 		return
 	}
 
-	utils.JSONResponse(ctx, w, 200, utils.SuccessResponse{
+	utils.JSONResponse(ctx, w, http.StatusOK, utils.SuccessResponse{
 		Status: http.StatusOK,
 		Data:   recipeData,
 	})
@@ -141,7 +141,7 @@ func (h *GeneratedHandler) CreateGeneratedRecipe(w http.ResponseWriter, r *http.
 	ctx := r.Context()
 	generatedRecipeData, err := dto.GetGenerationData(r)
 	if err != nil {
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusBadRequest,
 			Msg:    err.Error(),
 			MsgRus: "некорректные данные рецепта для генерации",
@@ -150,7 +150,7 @@ func (h *GeneratedHandler) CreateGeneratedRecipe(w http.ResponseWriter, r *http.
 	}
 
 	if generatedRecipeData.Ingredients == nil {
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusBadRequest,
 			Msg:    "err with request",
 			MsgRus: "некорректные данные рецепта для генерации",
@@ -161,21 +161,21 @@ func (h *GeneratedHandler) CreateGeneratedRecipe(w http.ResponseWriter, r *http.
 	generatedRecipe, err := h.usecase.CreateRecipe(ctx, generatedRecipeData.Ingredients, generatedRecipeData.Query)
 	if err != nil {
 		if errors.Is(err, internalErrors.ErrUserNotAuth) {
-			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 				Status: http.StatusUnauthorized,
 				Msg:    internalErrors.ErrUserNotAuth.Error(),
 				MsgRus: "пользователь не авторизован",
 			})
 			return
 		} else if errors.Is(err, internalErrors.ErrAllKeysAreUsing) {
-			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 				Status: http.StatusUnauthorized,
 				Msg:    internalErrors.ErrAllKeysAreUsing.Error(),
 				MsgRus: "На данный момент шеф занят, попробуйте позднее",
 			})
 			return
 		}
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusInternalServerError,
 			Msg:    err.Error(),
 			MsgRus: "не получилось сгенерировать рецепт",
@@ -183,7 +183,7 @@ func (h *GeneratedHandler) CreateGeneratedRecipe(w http.ResponseWriter, r *http.
 		return
 	}
 
-	utils.JSONResponse(ctx, w, 200, utils.SuccessResponse{
+	utils.JSONResponse(ctx, w, http.StatusOK, utils.SuccessResponse{
 		Status: http.StatusOK,
 		Data:   generatedRecipe,
 	})
@@ -193,7 +193,7 @@ func (h *GeneratedHandler) GetGeneratedRecipeHistoryByID(w http.ResponseWriter, 
 	ctx := r.Context()
 	recipeIDParam, err := dto.GetIntURLParam(r, recipeID)
 	if err != nil {
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusBadRequest,
 			Msg:    err.Error(),
 			MsgRus: "некорректный параметр recipeID",
@@ -204,14 +204,14 @@ func (h *GeneratedHandler) GetGeneratedRecipeHistoryByID(w http.ResponseWriter, 
 	history, err := h.usecase.GetHistoryByID(ctx, recipeIDParam)
 	if err != nil {
 		if errors.Is(err, internalErrors.ErrUserNotAuth) {
-			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 				Status: http.StatusUnauthorized,
 				Msg:    internalErrors.ErrUserNotAuth.Error(),
 				MsgRus: "пользователь не авторизован",
 			})
 			return
 		}
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusInternalServerError,
 			Msg:    err.Error(),
 			MsgRus: "не получилось получить историю",
@@ -219,7 +219,7 @@ func (h *GeneratedHandler) GetGeneratedRecipeHistoryByID(w http.ResponseWriter, 
 		return
 	}
 
-	utils.JSONResponse(ctx, w, 200, utils.SuccessResponse{
+	utils.JSONResponse(ctx, w, http.StatusOK, utils.SuccessResponse{
 		Status: http.StatusOK,
 		Data:   history,
 	})
@@ -229,7 +229,7 @@ func (h *GeneratedHandler) UpgradeGeneratedRecipeByIDByVersion(w http.ResponseWr
 	ctx := r.Context()
 	recipeIDParam, err := dto.GetIntURLParam(r, recipeID)
 	if err != nil {
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusBadRequest,
 			Msg:    err.Error(),
 			MsgRus: "некорректный параметр recipeID",
@@ -239,7 +239,7 @@ func (h *GeneratedHandler) UpgradeGeneratedRecipeByIDByVersion(w http.ResponseWr
 
 	versionIDParam, err := dto.GetIntURLParam(r, versionID)
 	if err != nil {
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusBadRequest,
 			Msg:    err.Error(),
 			MsgRus: "некорректный параметр versionID",
@@ -249,7 +249,7 @@ func (h *GeneratedHandler) UpgradeGeneratedRecipeByIDByVersion(w http.ResponseWr
 
 	generatedRecipeData, err := dto.GetGenerationData(r)
 	if err != nil {
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusBadRequest,
 			Msg:    err.Error(),
 			MsgRus: "некорректные данные рецепта для генерации",
@@ -260,21 +260,21 @@ func (h *GeneratedHandler) UpgradeGeneratedRecipeByIDByVersion(w http.ResponseWr
 	recipeData, err := h.usecase.UpdateRecipe(ctx, generatedRecipeData.Query, recipeIDParam, versionIDParam)
 	if err != nil {
 		if errors.Is(err, internalErrors.ErrUserNotAuth) {
-			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 				Status: http.StatusUnauthorized,
 				Msg:    internalErrors.ErrUserNotAuth.Error(),
 				MsgRus: "пользователь не авторизован",
 			})
 			return
 		} else if errors.Is(err, internalErrors.ErrAllKeysAreUsing) {
-			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 				Status: http.StatusUnauthorized,
 				Msg:    internalErrors.ErrAllKeysAreUsing.Error(),
 				MsgRus: "На данный момент шеф занят, попробуйте позднее",
 			})
 			return
 		}
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusInternalServerError,
 			Msg:    err.Error(),
 			MsgRus: "не получилось сгенерировать рецепт",
@@ -282,7 +282,7 @@ func (h *GeneratedHandler) UpgradeGeneratedRecipeByIDByVersion(w http.ResponseWr
 		return
 	}
 
-	utils.JSONResponse(ctx, w, 200, utils.SuccessResponse{
+	utils.JSONResponse(ctx, w, http.StatusOK, utils.SuccessResponse{
 		Status: http.StatusOK,
 		Data:   recipeData,
 	})
@@ -292,7 +292,7 @@ func (h *GeneratedHandler) StartCookingGeneratedRecipe(w http.ResponseWriter, r 
 	ctx := r.Context()
 	recipeIDParam, err := dto.GetIntURLParam(r, recipeID)
 	if err != nil {
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusBadRequest,
 			Msg:    err.Error(),
 			MsgRus: "некорректный параметр recipeID",
@@ -303,21 +303,21 @@ func (h *GeneratedHandler) StartCookingGeneratedRecipe(w http.ResponseWriter, r 
 	currentRecipeData, err := h.usecase.StartCookingByRecipeID(ctx, recipeIDParam)
 	if err != nil {
 		if errors.Is(err, internalErrors.ErrUserNotAuth) {
-			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 				Status: http.StatusUnauthorized,
 				Msg:    internalErrors.ErrUserNotAuth.Error(),
 				MsgRus: "пользователь не авторизован",
 			})
 			return
 		}
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusInternalServerError,
 			Msg:    err.Error(),
 		})
 		return
 	}
 
-	utils.JSONResponse(ctx, w, 200, utils.SuccessResponse{
+	utils.JSONResponse(ctx, w, http.StatusOK, utils.SuccessResponse{
 		Status: http.StatusOK,
 		Data:   currentRecipeData,
 	})
@@ -327,7 +327,7 @@ func (h *GeneratedHandler) SetNewMainVersionGeneratedRecipe(w http.ResponseWrite
 	ctx := r.Context()
 	recipeIDParam, err := dto.GetIntURLParam(r, recipeID)
 	if err != nil {
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusBadRequest,
 			Msg:    err.Error(),
 			MsgRus: "некорректный параметр recipeID",
@@ -337,7 +337,7 @@ func (h *GeneratedHandler) SetNewMainVersionGeneratedRecipe(w http.ResponseWrite
 
 	versionIDParam, err := dto.GetIntURLParam(r, versionID)
 	if err != nil {
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusBadRequest,
 			Msg:    err.Error(),
 			MsgRus: "некорректный параметр versionID",
@@ -348,20 +348,20 @@ func (h *GeneratedHandler) SetNewMainVersionGeneratedRecipe(w http.ResponseWrite
 	err = h.usecase.SetNewMainVersion(ctx, recipeIDParam, versionIDParam)
 	if err != nil {
 		if errors.Is(err, internalErrors.ErrUserNotAuth) {
-			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 				Status: http.StatusUnauthorized,
 				Msg:    internalErrors.ErrUserNotAuth.Error(),
 				MsgRus: "пользователь не авторизован",
 			})
 			return
 		} else if errors.Is(err, internalErrors.ErrVersionNotFound) {
-			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 				Status: http.StatusNotFound,
 				Msg:    internalErrors.ErrVersionNotFound.Error(),
 				MsgRus: "данной версии не существует",
 			})
 		}
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusInternalServerError,
 			Msg:    err.Error(),
 			MsgRus: "не получилось установить версию как главную",
@@ -369,7 +369,7 @@ func (h *GeneratedHandler) SetNewMainVersionGeneratedRecipe(w http.ResponseWrite
 		return
 	}
 
-	utils.JSONResponse(ctx, w, 200, utils.SuccessResponse{
+	utils.JSONResponse(ctx, w, http.StatusOK, utils.SuccessResponse{
 		Status: http.StatusOK,
 		Data:   nil,
 	})

@@ -28,12 +28,12 @@ func (r *MainPageRepository) GetRecipesByDishType(
 		FROM recipes
 		WHERE jsonb_exists(dish_types::jsonb, $1)
 	) SELECT id, name, description, image, ready_in_minutes, counter.total_count
-	FROM recipes, counter WHERE jsonb_exists(dish_types::jsonb, $2) LIMIT $3 OFFSET $4;`
+	FROM recipes, counter WHERE jsonb_exists(dish_types::jsonb, $1) LIMIT $2 OFFSET $3;`
 
 	recipeRows := make([]dao.MainPageRecipeTable, 0, pageSizeConst)
 
 	err := r.adapter.Select(ctx, &recipeRows, q,
-		dishType, dishType, pageSizeConst, page*pageSizeConst-pageSizeConst)
+		dishType, pageSizeConst, page*pageSizeConst-pageSizeConst)
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf(
 			"error getting recipe rows: %s with page: %d, dishType: %s", err.Error(), page, dishType))
@@ -63,12 +63,12 @@ func (r *MainPageRepository) GetRecipesByDiet(
 		FROM recipes
 		WHERE jsonb_exists(diets::jsonb, $1)
 	) SELECT id, name, description, image, ready_in_minutes, counter.total_count
-	FROM recipes, counter WHERE jsonb_exists(diets::jsonb, $2) LIMIT $3 OFFSET $4;`
+	FROM recipes, counter WHERE jsonb_exists(diets::jsonb, $1) LIMIT $2 OFFSET $3;`
 
 	recipeRows := make([]dao.MainPageRecipeTable, 0, pageSizeConst)
 
 	err := r.adapter.Select(ctx, &recipeRows, q,
-		diet, diet, pageSizeConst, page*pageSizeConst-pageSizeConst)
+		diet, pageSizeConst, page*pageSizeConst-pageSizeConst)
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf(
 			"error getting recipe rows: %s with page: %d, diet: %s", err.Error(), page, diet))
@@ -102,12 +102,12 @@ func (r *MainPageRepository) GetCollectionByID(
 	(SELECT total_count FROM counter) as total_count
 	FROM recipes_collection_recipes as rc
 	LEFT JOIN recipes as r ON rc.recipe_id = r.id
-	WHERE collection_id = $2 LIMIT $3 OFFSET $4;`
+	WHERE collection_id = $1 LIMIT $2 OFFSET $3;`
 
 	recipeRows := make([]dao.MainPageRecipeTable, 0, pageSizeConst)
 
 	err := r.adapter.Select(ctx, &recipeRows, q,
-		collectionID, collectionID, pageSizeConst, page*pageSizeConst-pageSizeConst)
+		collectionID, pageSizeConst, page*pageSizeConst-pageSizeConst)
 
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf(

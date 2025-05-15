@@ -41,13 +41,13 @@ func (h *MainPageHandler) InitRouter(r *mux.Router) {
 	h.router = r.PathPrefix("/main").Subrouter()
 	{
 		h.router.Handle("/collection/all",
-			http.HandlerFunc(h.GetCollections)).Methods("GET", "OPTIONS")
+			http.HandlerFunc(h.GetCollections)).Methods(http.MethodGet, http.MethodOptions)
 		h.router.Handle("/collection/{collectionID}",
-			http.HandlerFunc(h.GetCollectionByID)).Methods("GET", "OPTIONS")
+			http.HandlerFunc(h.GetCollectionByID)).Methods(http.MethodGet, http.MethodOptions)
 		h.router.Handle("/recipe/diet",
-			http.HandlerFunc(h.GetRecipesByDiet)).Methods("GET", "OPTIONS")
+			http.HandlerFunc(h.GetRecipesByDiet)).Methods(http.MethodGet, http.MethodOptions)
 		h.router.Handle("/recipe/types",
-			http.HandlerFunc(h.GetRecipesByDishType)).Methods("GET", "OPTIONS")
+			http.HandlerFunc(h.GetRecipesByDishType)).Methods(http.MethodGet, http.MethodOptions)
 	}
 }
 

@@ -34,9 +34,9 @@ func NewSearchHandler(usecase SearchUsecase) *SearchHandler {
 func (h *SearchHandler) InitRouter(r *mux.Router) {
 	h.router = r.PathPrefix("/search").Subrouter()
 	{
-		h.router.HandleFunc("", h.Search).Methods("GET")
-		h.router.HandleFunc("/suggest", h.Suggest).Methods("GET")
-		h.router.HandleFunc("/filters", h.GetAllFilters).Methods("GET")
+		h.router.HandleFunc("", h.Search).Methods(http.MethodGet)
+		h.router.HandleFunc("/suggest", h.Suggest).Methods(http.MethodGet)
+		h.router.HandleFunc("/filters", h.GetAllFilters).Methods(http.MethodGet)
 	}
 }
 
@@ -48,7 +48,7 @@ func (h *SearchHandler) Search(w http.ResponseWriter, r *http.Request) {
 	maxTimeStr := r.URL.Query().Get("maxTime")
 
 	if query == "" {
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusBadRequest,
 			Msg:    "query parameter not found",
 			MsgRus: "не найдена строчка поискового запроса",
@@ -59,7 +59,7 @@ func (h *SearchHandler) Search(w http.ResponseWriter, r *http.Request) {
 	maxTime, err := strconv.Atoi(maxTimeStr)
 
 	if err != nil && maxTimeStr != "" {
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusBadRequest,
 			Msg:    "max time must be a int",
 			MsgRus: "максимальное время должно быть целым числом",
@@ -71,14 +71,14 @@ func (h *SearchHandler) Search(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		if errors.Is(err, internalErrors.ErrNoFound) {
-			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 				Status: http.StatusNotFound,
 				Msg:    "results not found",
 				MsgRus: "по запросу ничего не найдено",
 			})
 			return
 		}
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusInternalServerError,
 			Msg:    err.Error(),
 			MsgRus: "не получилось произвести поиск",
@@ -86,7 +86,7 @@ func (h *SearchHandler) Search(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	utils.JSONResponse(ctx, w, 200, utils.SuccessResponse{
+	utils.JSONResponse(ctx, w, http.StatusOK, utils.SuccessResponse{
 		Status: http.StatusOK,
 		Data:   searchResponse,
 	})
@@ -96,7 +96,7 @@ func (h *SearchHandler) Suggest(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	query := r.URL.Query().Get("query")
 	if query == "" {
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusBadRequest,
 			Msg:    "query parameter not found",
 			MsgRus: "не найдена строчка поискового запроса",
@@ -107,7 +107,7 @@ func (h *SearchHandler) Suggest(w http.ResponseWriter, r *http.Request) {
 	suggestResponse, err := h.usecase.Suggest(ctx, query)
 
 	if err != nil {
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusInternalServerError,
 			Msg:    err.Error(),
 			MsgRus: "не получилось найти подсказку",
@@ -115,7 +115,7 @@ func (h *SearchHandler) Suggest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	utils.JSONResponse(ctx, w, 200, utils.SuccessResponse{
+	utils.JSONResponse(ctx, w, http.StatusOK, utils.SuccessResponse{
 		Status: http.StatusOK,
 		Data:   suggestResponse,
 	})
@@ -127,7 +127,7 @@ func (h *SearchHandler) GetAllFilters(w http.ResponseWriter, r *http.Request) {
 	filtersData, err := h.usecase.GetFilter(ctx)
 
 	if err != nil {
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusInternalServerError,
 			Msg:    err.Error(),
 			MsgRus: "не получилось получить фильтры",
@@ -135,7 +135,7 @@ func (h *SearchHandler) GetAllFilters(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	utils.JSONResponse(ctx, w, 200, utils.SuccessResponse{
+	utils.JSONResponse(ctx, w, http.StatusOK, utils.SuccessResponse{
 		Status: http.StatusOK,
 		Data:   filtersData,
 	})

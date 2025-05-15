@@ -13,7 +13,7 @@ const publicRecipesConst = "public.recipes"
 type CookingRecipeRepo interface {
 	GetAllRecipe(ctx context.Context, num int) ([]models.RecipeModel, error)
 	GetRecipeByID(ctx context.Context, id int) ([]models.RecipeModel, error)
-	EndCooking(ctx context.Context, uID uint) error
+	EndCooking(ctx context.Context, uID uint) (int, bool, error)
 	StartCooking(ctx context.Context, uID uint, recipeID int, entity string) error
 	GetCurrentRecipe(ctx context.Context, uID uint) (models.CurrentRecipeModel, error)
 	GetNextRecipeStep(ctx context.Context, uID uint) (models.CurrentStepRecipeModel, error)
@@ -25,6 +25,7 @@ type CookingRecipeRepo interface {
 	GetCurrentRecipeStepByNum(ctx context.Context, uID uint, stepNum int) (
 		models.CurrentStepRecipeModel, error,
 	)
+	AddRecipeToHistory(ctx context.Context, userID uint, recipeID int, isGenerated bool) error
 }
 
 type CookingRecipeUsecase struct {
@@ -111,12 +112,12 @@ func (u *CookingRecipeUsecase) EndCookingRecipe(ctx context.Context) error {
 		return err
 	}
 
-	err = u.repo.EndCooking(ctx, uID)
+	recipeID, IsGenerated, err := u.repo.EndCooking(ctx, uID)
 	if err != nil {
 		return err
 	}
 
-	return nil
+	return u.repo.AddRecipeToHistory(ctx, uID, recipeID, IsGenerated)
 }
 
 func (u *CookingRecipeUsecase) GetCurrentRecipe(ctx context.Context) (dto.CurrentRecipeDto, error) {

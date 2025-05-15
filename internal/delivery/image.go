@@ -31,7 +31,7 @@ func NewImageHandler(usecase ImageUsecase) *ImageHandler {
 func (h *ImageHandler) InitRouter(r *mux.Router) {
 	h.router = r.PathPrefix("/image").Subrouter()
 	{
-		h.router.Handle("/{entity}/{filename}", http.HandlerFunc(h.GetImageByID)).Methods("GET")
+		h.router.Handle("/{entity}/{filename}", http.HandlerFunc(h.GetImageByID)).Methods(http.MethodGet)
 	}
 }
 
@@ -39,7 +39,7 @@ func (h *ImageHandler) GetImageByID(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	entity, ok := mux.Vars(r)["entity"]
 	if !ok {
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusBadRequest,
 			Msg:    "entity not found",
 			MsgRus: "не найден тип картинки",
@@ -49,7 +49,7 @@ func (h *ImageHandler) GetImageByID(w http.ResponseWriter, r *http.Request) {
 
 	filename, ok := mux.Vars(r)["filename"]
 	if !ok {
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusBadRequest,
 			Msg:    "filename not found",
 			MsgRus: "имя файла не найдено",
@@ -59,7 +59,7 @@ func (h *ImageHandler) GetImageByID(w http.ResponseWriter, r *http.Request) {
 
 	imageData, err := h.usecase.GetImageByID(ctx, filename, entity)
 	if err != nil {
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusInternalServerError,
 			Msg:    err.Error(),
 			MsgRus: "не получилось получить изображение",

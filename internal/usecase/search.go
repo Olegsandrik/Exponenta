@@ -40,7 +40,7 @@ func (s *SearchUsecase) Search(
 
 	searchResult := models.ConvertSearchResponseToDto(searchResultModel)
 
-	uID, err := utils.GetUserIDFromContext(ctx)
+	uID, _ := utils.GetUserIDFromContext(ctx)
 	if uID == 0 {
 		return searchResult, nil
 	}

@@ -44,16 +44,16 @@ func NewCookingRecipeHandler(usecase CookingRecipeUsecase) *CookingRecipeHandler
 func (h *CookingRecipeHandler) InitRouter(r *mux.Router) {
 	h.router = r.PathPrefix("/recipe").Subrouter()
 	{
-		h.router.Handle("", http.HandlerFunc(h.GetCurrentRecipe)).Methods("GET")
-		h.router.Handle("/all", http.HandlerFunc(h.GetAllRecipes)).Methods("GET")
-		h.router.Handle("/timers", http.HandlerFunc(h.GetAllTimersCookingRecipe)).Methods("GET")
-		h.router.Handle("/{recipeID}", http.HandlerFunc(h.GetRecipeByID)).Methods("GET")
-		h.router.Handle("/start", http.HandlerFunc(h.StartCookingRecipe)).Methods("POST")
-		h.router.Handle("/end", http.HandlerFunc(h.EndCookingRecipe)).Methods("POST")
-		h.router.Handle("/next", http.HandlerFunc(h.NextStepCookingRecipe)).Methods("POST")
-		h.router.Handle("/prev", http.HandlerFunc(h.PrevStepCookingRecipe)).Methods("POST")
-		h.router.Handle("/timer/add", http.HandlerFunc(h.AddTimerCookingRecipe)).Methods("POST")
-		h.router.Handle("/timer/finish", http.HandlerFunc(h.FinishTimerCookingRecipe)).Methods("POST")
+		h.router.Handle("", http.HandlerFunc(h.GetCurrentRecipe)).Methods(http.MethodGet)
+		h.router.Handle("/all", http.HandlerFunc(h.GetAllRecipes)).Methods(http.MethodGet)
+		h.router.Handle("/timers", http.HandlerFunc(h.GetAllTimersCookingRecipe)).Methods(http.MethodGet)
+		h.router.Handle("/{recipeID}", http.HandlerFunc(h.GetRecipeByID)).Methods(http.MethodGet)
+		h.router.Handle("/start", http.HandlerFunc(h.StartCookingRecipe)).Methods(http.MethodPost)
+		h.router.Handle("/end", http.HandlerFunc(h.EndCookingRecipe)).Methods(http.MethodPost)
+		h.router.Handle("/next", http.HandlerFunc(h.NextStepCookingRecipe)).Methods(http.MethodPost)
+		h.router.Handle("/prev", http.HandlerFunc(h.PrevStepCookingRecipe)).Methods(http.MethodPost)
+		h.router.Handle("/timer/add", http.HandlerFunc(h.AddTimerCookingRecipe)).Methods(http.MethodPost)
+		h.router.Handle("/timer/finish", http.HandlerFunc(h.FinishTimerCookingRecipe)).Methods(http.MethodPost)
 	}
 }
 
@@ -62,7 +62,7 @@ func (h *CookingRecipeHandler) GetAllRecipes(w http.ResponseWriter, r *http.Requ
 
 	numParam, err := dto.GetIntQueryParam(r, num)
 	if err != nil {
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusBadRequest,
 			Msg:    err.Error(),
 			MsgRus: "некорректные данные num",
@@ -73,7 +73,7 @@ func (h *CookingRecipeHandler) GetAllRecipes(w http.ResponseWriter, r *http.Requ
 	recipeData, err := h.usecase.GetAllRecipe(ctx, numParam)
 
 	if err != nil {
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusInternalServerError,
 			Msg:    err.Error(),
 			MsgRus: "не получилось получить рецепты",
@@ -81,7 +81,7 @@ func (h *CookingRecipeHandler) GetAllRecipes(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	utils.JSONResponse(ctx, w, 200, utils.SuccessResponse{
+	utils.JSONResponse(ctx, w, http.StatusOK, utils.SuccessResponse{
 		Status: http.StatusOK,
 		Data:   recipeData,
 	})
@@ -92,7 +92,7 @@ func (h *CookingRecipeHandler) GetRecipeByID(w http.ResponseWriter, r *http.Requ
 
 	recipeIDParam, err := dto.GetIntURLParam(r, recipeID)
 	if err != nil {
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusBadRequest,
 			Msg:    err.Error(),
 			MsgRus: "id должен быть целым числом",
@@ -102,7 +102,7 @@ func (h *CookingRecipeHandler) GetRecipeByID(w http.ResponseWriter, r *http.Requ
 
 	recipe, err := h.usecase.GetRecipeByID(ctx, recipeIDParam)
 	if err != nil {
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusInternalServerError,
 			Msg:    err.Error(),
 			MsgRus: "не получилось получить рецепт",
@@ -110,7 +110,7 @@ func (h *CookingRecipeHandler) GetRecipeByID(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	utils.JSONResponse(ctx, w, 200, utils.SuccessResponse{
+	utils.JSONResponse(ctx, w, http.StatusOK, utils.SuccessResponse{
 		Status: http.StatusOK,
 		Data:   recipe,
 	})
@@ -122,21 +122,21 @@ func (h *CookingRecipeHandler) GetCurrentRecipe(w http.ResponseWriter, r *http.R
 	recipeData, err := h.usecase.GetCurrentRecipe(ctx)
 	if err != nil {
 		if errors.Is(err, internalErrors.ErrUserNotAuth) {
-			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 				Status: http.StatusUnauthorized,
 				Msg:    internalErrors.ErrUserNotAuth.Error(),
 				MsgRus: "пользователь не авторизован",
 			})
 			return
 		}
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusInternalServerError,
 			Msg:    err.Error(),
 			MsgRus: "не получилось получить рецепт",
 		})
 		return
 	}
-	utils.JSONResponse(ctx, w, 200, utils.SuccessResponse{
+	utils.JSONResponse(ctx, w, http.StatusOK, utils.SuccessResponse{
 		Status: http.StatusOK,
 		Data:   recipeData,
 	})
@@ -148,7 +148,7 @@ func (h *CookingRecipeHandler) StartCookingRecipe(w http.ResponseWriter, r *http
 	recipeData, err := dto.GetCookingRecipeData(r)
 
 	if err != nil {
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusBadRequest,
 			Msg:    "invalid recipe id",
 			MsgRus: "некорректный recipe id",
@@ -157,7 +157,7 @@ func (h *CookingRecipeHandler) StartCookingRecipe(w http.ResponseWriter, r *http
 	}
 
 	if recipeData.ID == 0 {
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusBadRequest,
 			Msg:    "not found recipe id",
 			MsgRus: "не найден recipe id",
@@ -169,14 +169,14 @@ func (h *CookingRecipeHandler) StartCookingRecipe(w http.ResponseWriter, r *http
 
 	if err != nil {
 		if errors.Is(err, internalErrors.ErrUserNotAuth) {
-			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 				Status: http.StatusUnauthorized,
 				Msg:    internalErrors.ErrUserNotAuth.Error(),
 				MsgRus: "пользователь не авторизован",
 			})
 			return
 		}
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusInternalServerError,
 			Msg:    err.Error(),
 			MsgRus: "не получилось начать готовку",
@@ -184,7 +184,7 @@ func (h *CookingRecipeHandler) StartCookingRecipe(w http.ResponseWriter, r *http
 		return
 	}
 
-	utils.JSONResponse(ctx, w, 200, utils.SuccessResponse{
+	utils.JSONResponse(ctx, w, http.StatusOK, utils.SuccessResponse{
 		Status: http.StatusOK,
 		Data:   currentRecipe,
 	})
@@ -196,14 +196,14 @@ func (h *CookingRecipeHandler) EndCookingRecipe(w http.ResponseWriter, r *http.R
 	err := h.usecase.EndCookingRecipe(ctx)
 	if err != nil {
 		if errors.Is(err, internalErrors.ErrUserNotAuth) {
-			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 				Status: http.StatusUnauthorized,
 				Msg:    internalErrors.ErrUserNotAuth.Error(),
 				MsgRus: "пользователь не авторизован",
 			})
 			return
 		}
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusInternalServerError,
 			Msg:    err.Error(),
 			MsgRus: "не получилось завершить рецепт",
@@ -211,7 +211,7 @@ func (h *CookingRecipeHandler) EndCookingRecipe(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	utils.JSONResponse(ctx, w, 200, utils.SuccessResponse{
+	utils.JSONResponse(ctx, w, http.StatusOK, utils.SuccessResponse{
 		Status: http.StatusOK,
 		Data:   nil,
 	})
@@ -223,14 +223,14 @@ func (h *CookingRecipeHandler) NextStepCookingRecipe(w http.ResponseWriter, r *h
 	nextStepData, err := h.usecase.NextStepRecipe(ctx)
 	if err != nil {
 		if errors.Is(err, internalErrors.ErrUserNotAuth) {
-			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 				Status: http.StatusUnauthorized,
 				Msg:    internalErrors.ErrUserNotAuth.Error(),
 				MsgRus: "пользователь не авторизован",
 			})
 			return
 		}
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusInternalServerError,
 			Msg:    err.Error(),
 			MsgRus: "не получилось перейти к следующему шагу рецепта",
@@ -238,7 +238,7 @@ func (h *CookingRecipeHandler) NextStepCookingRecipe(w http.ResponseWriter, r *h
 		return
 	}
 
-	utils.JSONResponse(ctx, w, 200, utils.SuccessResponse{
+	utils.JSONResponse(ctx, w, http.StatusOK, utils.SuccessResponse{
 		Status: http.StatusOK,
 		Data:   nextStepData,
 	})
@@ -250,14 +250,14 @@ func (h *CookingRecipeHandler) PrevStepCookingRecipe(w http.ResponseWriter, r *h
 	prevStepData, err := h.usecase.PreviousStepRecipe(ctx)
 	if err != nil {
 		if errors.Is(err, internalErrors.ErrUserNotAuth) {
-			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 				Status: http.StatusUnauthorized,
 				Msg:    internalErrors.ErrUserNotAuth.Error(),
 				MsgRus: "пользователь не авторизован",
 			})
 			return
 		}
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusInternalServerError,
 			Msg:    err.Error(),
 			MsgRus: "не получилось перейти к предыдущему шагу рецетпа",
@@ -265,7 +265,7 @@ func (h *CookingRecipeHandler) PrevStepCookingRecipe(w http.ResponseWriter, r *h
 		return
 	}
 
-	utils.JSONResponse(ctx, w, 200, utils.SuccessResponse{
+	utils.JSONResponse(ctx, w, http.StatusOK, utils.SuccessResponse{
 		Status: http.StatusOK,
 		Data:   prevStepData,
 	})
@@ -277,14 +277,14 @@ func (h *CookingRecipeHandler) GetAllTimersCookingRecipe(w http.ResponseWriter, 
 	timersData, err := h.usecase.GetTimersRecipe(ctx)
 	if err != nil {
 		if errors.Is(err, internalErrors.ErrUserNotAuth) {
-			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 				Status: http.StatusUnauthorized,
 				Msg:    internalErrors.ErrUserNotAuth.Error(),
 				MsgRus: "пользователь не авторизован",
 			})
 			return
 		}
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusInternalServerError,
 			Msg:    err.Error(),
 			MsgRus: "не получилось получить список таймеров",
@@ -292,7 +292,7 @@ func (h *CookingRecipeHandler) GetAllTimersCookingRecipe(w http.ResponseWriter, 
 		return
 	}
 
-	utils.JSONResponse(ctx, w, 200, utils.SuccessResponse{
+	utils.JSONResponse(ctx, w, http.StatusOK, utils.SuccessResponse{
 		Status: http.StatusOK,
 		Data:   timersData,
 	})
@@ -304,7 +304,7 @@ func (h *CookingRecipeHandler) AddTimerCookingRecipe(w http.ResponseWriter, r *h
 	TimerData, err := dto.GetTimerRecipeData(r)
 
 	if err != nil {
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusBadRequest,
 			Msg:    "invalid timer data",
 			MsgRus: "некорректны данные таймера",
@@ -313,7 +313,7 @@ func (h *CookingRecipeHandler) AddTimerCookingRecipe(w http.ResponseWriter, r *h
 	}
 
 	if TimerData.StepNum == 0 {
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusBadRequest,
 			Msg:    "step not found",
 			MsgRus: "step не найден",
@@ -322,7 +322,7 @@ func (h *CookingRecipeHandler) AddTimerCookingRecipe(w http.ResponseWriter, r *h
 	}
 
 	if TimerData.Time == 0 {
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusBadRequest,
 			Msg:    "time not found",
 			MsgRus: "time не найден",
@@ -334,14 +334,14 @@ func (h *CookingRecipeHandler) AddTimerCookingRecipe(w http.ResponseWriter, r *h
 
 	if err != nil {
 		if errors.Is(err, internalErrors.ErrUserNotAuth) {
-			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 				Status: http.StatusUnauthorized,
 				Msg:    internalErrors.ErrUserNotAuth.Error(),
 				MsgRus: "пользователь не авторизован",
 			})
 			return
 		}
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusInternalServerError,
 			Msg:    err.Error(),
 			MsgRus: "не получилось добавить таймер",
@@ -349,7 +349,7 @@ func (h *CookingRecipeHandler) AddTimerCookingRecipe(w http.ResponseWriter, r *h
 		return
 	}
 
-	utils.JSONResponse(ctx, w, 200, utils.SuccessResponse{
+	utils.JSONResponse(ctx, w, http.StatusOK, utils.SuccessResponse{
 		Status: http.StatusOK,
 		Data:   nil,
 	})
@@ -361,7 +361,7 @@ func (h *CookingRecipeHandler) FinishTimerCookingRecipe(w http.ResponseWriter, r
 	TimerData, err := dto.GetTimerRecipeData(r)
 
 	if err != nil {
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusBadRequest,
 			Msg:    "invalid timer data",
 			MsgRus: "некорректны данные таймера",
@@ -370,7 +370,7 @@ func (h *CookingRecipeHandler) FinishTimerCookingRecipe(w http.ResponseWriter, r
 	}
 
 	if TimerData.StepNum == 0 {
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusBadRequest,
 			Msg:    "step not found",
 			MsgRus: "step не найден",
@@ -382,14 +382,14 @@ func (h *CookingRecipeHandler) FinishTimerCookingRecipe(w http.ResponseWriter, r
 
 	if err != nil {
 		if errors.Is(err, internalErrors.ErrUserNotAuth) {
-			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 				Status: http.StatusUnauthorized,
 				Msg:    internalErrors.ErrUserNotAuth.Error(),
 				MsgRus: "пользователь не авторизован",
 			})
 			return
 		}
-		utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+		utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 			Status: http.StatusInternalServerError,
 			Msg:    err.Error(),
 			MsgRus: "не получилось завершить таймер",
@@ -397,7 +397,7 @@ func (h *CookingRecipeHandler) FinishTimerCookingRecipe(w http.ResponseWriter, r
 		return
 	}
 
-	utils.JSONResponse(ctx, w, 200, utils.SuccessResponse{
+	utils.JSONResponse(ctx, w, http.StatusOK, utils.SuccessResponse{
 		Status: http.StatusOK,
 		Data:   nil,
 	})

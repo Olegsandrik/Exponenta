@@ -2,7 +2,9 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -14,6 +16,8 @@ import (
 	"github.com/Olegsandrik/Exponenta/internal/usecase/models"
 	"github.com/Olegsandrik/Exponenta/logger"
 )
+
+const publicGenRecipesConst = "public.generated_recipes"
 
 type CookingRecipeRepo struct {
 	storage *postgres.Adapter
@@ -134,29 +138,51 @@ func (repo *CookingRecipeRepo) getRecipeByID(ctx context.Context, tx *sqlx.Tx, i
 	return recipeItem, nil
 }
 
-func (repo *CookingRecipeRepo) EndCooking(ctx context.Context, uID uint) error {
-	q := "DELETE FROM public.current_recipe WHERE user_id = $1"
+func (repo *CookingRecipeRepo) EndCooking(ctx context.Context, uID uint) (int, bool, error) {
+	var recipeID int
+	var isGenerated bool
+	q := `DELETE FROM public.current_recipe WHERE user_id = $1 RETURNING recipe_id, is_generated`
 
-	result, err := repo.storage.Exec(ctx, q, uID)
+	err := repo.storage.QueryRow(ctx, q, uID).Scan(&recipeID, &isGenerated)
 
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			logger.Error(ctx, fmt.Sprintf("zero values scan from deleting for userId: %d", uID))
+			return 0, false, internalErrors.ErrNoCurrentRecipe
+		}
 		logger.Error(ctx, fmt.Sprintf("error deleting recipe row: %e with id: %d", err, uID))
-		return internalErrors.ErrFailToEndCooking
-	}
-
-	rowsAffected, err := result.RowsAffected()
-
-	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("failed to get rows affected by delete with userId: %d, internalerrors: %e", uID, err))
-		return internalErrors.ErrFailToEndCooking
-	}
-
-	if rowsAffected == 0 {
-		logger.Error(ctx, fmt.Sprintf("recipe not delete with userId: %d", uID))
-		return internalErrors.ErrNoCurrentRecipe
+		return 0, false, internalErrors.ErrFailToEndCooking
 	}
 
 	logger.Info(ctx, fmt.Sprintf("delete row into current_recipe with userId %d", uID))
+
+	return recipeID, isGenerated, nil
+}
+
+func (repo *CookingRecipeRepo) AddRecipeToHistory(ctx context.Context,
+	uID uint, recipeID int, isGenerated bool) error {
+	q := `INSERT INTO public.user_cooking_history (user_id, recipe_id, is_generated) VALUES ($1, $2, $3)`
+
+	result, err := repo.storage.Exec(ctx, q, uID, recipeID, isGenerated)
+
+	if err != nil {
+		logger.Info(ctx, fmt.Sprintf(
+			"error adding recipe to history row: %e with id: %d, isGen: %t", err, uID, isGenerated))
+		return internalErrors.ErrAddRecipeToUserCookingHistory
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		logger.Info(ctx, fmt.Sprintf(
+			"err get rows afffected with history row: %e with id: %d, isGen: %t", err, uID, isGenerated))
+		return internalErrors.ErrAddRecipeToUserCookingHistory
+	}
+
+	if rows == 0 {
+		logger.Info(ctx, fmt.Sprintf(
+			"zero rows affected with history row with id: %d, isGen: %t", uID, isGenerated))
+		return internalErrors.ErrAddRecipeToUserCookingHistory
+	}
 
 	return nil
 }
@@ -184,7 +210,8 @@ func (repo *CookingRecipeRepo) StartCooking(ctx context.Context, uID uint, recip
 		return err
 	}
 
-	if err = repo.insertCurrentRecipe(ctx, tx, uID, recipeID, recipe.Name, recipe.TotalSteps); err != nil {
+	if err = repo.insertCurrentRecipe(ctx, tx,
+		uID, recipeID, recipe.Name, recipe.TotalSteps, recipe.IsGenerated); err != nil {
 		return err
 	}
 
@@ -197,9 +224,8 @@ func (repo *CookingRecipeRepo) StartCooking(ctx context.Context, uID uint, recip
 	}
 
 	logger.Info(ctx,
-		fmt.Sprintf("successfully started cooking recipe for userId: %d, recipeId: %d",
-			uID,
-			recipeID),
+		fmt.Sprintf("successfully started cooking recipe for userId: %d, recipeId: %d, isGenerated: %t",
+			uID, recipeID, recipe.IsGenerated),
 	)
 
 	return nil
@@ -214,23 +240,29 @@ func (repo *CookingRecipeRepo) getRecipe(ctx context.Context, tx *sqlx.Tx, recip
 	recipeRows := make([]dao.RecipeTable, 0, 1)
 
 	if err := tx.SelectContext(ctx, &recipeRows, q, recipeID); err != nil {
-		logger.Error(ctx, fmt.Sprintf("error getting recipe row: %e with recipeId: %d", err, recipeID))
+		logger.Error(ctx, fmt.Sprintf("error getting recipe row: %e with recipeId: %d, entity: %s",
+			err, recipeID, entity))
 		return nil, internalErrors.ErrFailToGetRecipeByID
 	}
 
 	if len(recipeRows) == 0 {
-		logger.Error(ctx, fmt.Sprintf("recipe not found with recipeId: %d", recipeID))
+		logger.Error(ctx, fmt.Sprintf("recipe not found with recipeId: %d, entity: %s", recipeID, entity))
 		return nil, internalErrors.ErrNoSuchRecipeWithID
+	}
+
+	if entity == publicGenRecipesConst {
+		recipeRows[0].IsGenerated = true
 	}
 
 	return &recipeRows[0], nil
 }
 
-func (repo *CookingRecipeRepo) insertCurrentRecipe(
-	ctx context.Context, tx *sqlx.Tx, uID uint, recipeID int, name string, totalSteps int) error {
-	q := "INSERT INTO public.current_recipe (user_id, recipe_id, name, total_steps) VALUES ($1, $2, $3, $4)"
+func (repo *CookingRecipeRepo) insertCurrentRecipe(ctx context.Context, tx *sqlx.Tx, uID uint, recipeID int,
+	name string, totalSteps int, isGenerated bool) error {
+	q := `INSERT INTO public.current_recipe (user_id, recipe_id, name, total_steps, is_generated) 
+	VALUES ($1, $2, $3, $4, $5)`
 
-	result, err := tx.ExecContext(ctx, q, uID, recipeID, name, totalSteps)
+	result, err := tx.ExecContext(ctx, q, uID, recipeID, name, totalSteps, isGenerated)
 
 	if err != nil {
 		logger.Error(ctx,
@@ -268,8 +300,8 @@ func (repo *CookingRecipeRepo) insertRecipeSteps(
 		return internalErrors.ErrFailToStartCooking
 	}
 
-	q := "INSERT INTO public.current_recipe_step " +
-		"(user_id, recipe_id, step_num, step, ingredients, equipment, length) VALUES "
+	q := `INSERT INTO public.current_recipe_step
+		(user_id, recipe_id, step_num, step, ingredients, equipment, length) VALUES `
 
 	args := make([]interface{}, 0, 7*len(steps))
 
@@ -324,10 +356,11 @@ func (repo *CookingRecipeRepo) insertRecipeSteps(
 }
 
 func (repo *CookingRecipeRepo) GetCurrentRecipe(ctx context.Context, uID uint) (models.CurrentRecipeModel, error) {
-	q := "SELECT cr.recipe_id, cr.name, cr.total_steps, cs.step_num, cs.step, cs.ingredients, cs.equipment, cs.length " +
-		"FROM public.current_recipe as cr " +
-		"LEFT JOIN public.current_recipe_step as cs ON cs.user_id = cr.user_id AND cr.current_step_num=cs.step_num " +
-		"WHERE cr.user_id = $1"
+	q := `SELECT cr.recipe_id, cr.name, cr.total_steps, cr.is_generated, cs.step_num, cs.step, 
+       		cs.ingredients, cs.equipment, cs.length
+		  FROM public.current_recipe as cr
+		  LEFT JOIN public.current_recipe_step as cs ON cs.user_id = cr.user_id AND cr.current_step_num=cs.step_num
+		  WHERE cr.user_id = $1`
 
 	recipeRows := make([]dao.CurrentRecipeTable, 0, 1)
 
@@ -355,8 +388,8 @@ func (repo *CookingRecipeRepo) GetCurrentRecipe(ctx context.Context, uID uint) (
 }
 
 func (repo *CookingRecipeRepo) updateCurrentStepTx(ctx context.Context, tx *sqlx.Tx, uID uint, sign string) error {
-	q := fmt.Sprintf("UPDATE public.current_recipe SET current_step_num = current_step_num %s 1 "+
-		"WHERE user_id = $1", sign)
+	q := fmt.Sprintf(`UPDATE public.current_recipe SET current_step_num = current_step_num %s 1
+		WHERE user_id = $1`, sign)
 
 	result, err := tx.ExecContext(ctx, q, uID)
 
@@ -384,10 +417,10 @@ func (repo *CookingRecipeRepo) getCurrentStep(
 	ctx context.Context, queryer sqlx.QueryerContext, uID uint) (models.CurrentStepRecipeModel, error) {
 	currentStep := make([]dao.CurrentRecipeStepTable, 0, 1)
 
-	q := "SELECT cs.step_num, cs.step, cs.ingredients, cs.equipment, cs.length " +
-		"FROM public.current_recipe as cr LEFT JOIN public.current_recipe_step as cs " +
-		"ON cr.current_step_num = cs.step_num AND cr.user_id=cs.user_id " +
-		"WHERE cr.user_id = $1;"
+	q := `SELECT cs.step_num, cs.step, cs.ingredients, cs.equipment, cs.length 
+		FROM public.current_recipe as cr LEFT JOIN public.current_recipe_step as cs
+		ON cr.current_step_num = cs.step_num AND cr.user_id=cs.user_id 
+		WHERE cr.user_id = $1;`
 
 	err := sqlx.SelectContext(ctx, queryer, &currentStep, q, uID)
 	if err != nil {
@@ -497,8 +530,8 @@ func (repo *CookingRecipeRepo) GetCurrentStep(ctx context.Context, uID uint) (mo
 
 func (repo *CookingRecipeRepo) AddTimerToRecipe(
 	ctx context.Context, uID uint, StepNum int, timeSec int, description string) error {
-	q := "INSERT INTO public.timers (user_id,step_num,description,end_time) " +
-		"VALUES($1, $2, $3, $4);"
+	q := `INSERT INTO public.timers (user_id,step_num,description,end_time)
+		VALUES($1, $2, $3, $4);`
 
 	endTime := time.Now().Add(time.Duration(timeSec) * time.Second)
 
@@ -606,8 +639,8 @@ func (repo *CookingRecipeRepo) GetTimersRecipe(ctx context.Context, uID uint) ([
 
 func (repo *CookingRecipeRepo) GetCurrentRecipeStepByNum(
 	ctx context.Context, uID uint, stepNum int) (models.CurrentStepRecipeModel, error) {
-	q := "SELECT step, step_num, ingredients, equipment, length FROM public.current_recipe_step " +
-		"WHERE user_id=$1 AND step_num=$2"
+	q := `SELECT step, step_num, ingredients, equipment, length FROM public.current_recipe_step
+		WHERE user_id=$1 AND step_num=$2`
 
 	recipeStepRow := make([]dao.CurrentRecipeStepTable, 0, 1)
 

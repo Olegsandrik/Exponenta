@@ -40,17 +40,17 @@ func NewProfileHandler(profileUsecase ProfileUsecase) *ProfileHandler {
 func (h *ProfileHandler) InitRouter(r *mux.Router) {
 	h.router = r.PathPrefix("/profile").Subrouter()
 	{
-		h.router.Handle("", http.HandlerFunc(h.Profile)).Methods("GET", "OPTIONS")
+		h.router.Handle("", http.HandlerFunc(h.Profile)).Methods(http.MethodGet, http.MethodOptions)
 		h.router.Handle("/edit/name",
-			http.HandlerFunc(h.EditName)).Methods("POST", "OPTIONS")
+			http.HandlerFunc(h.EditName)).Methods(http.MethodPost, http.MethodOptions)
 		h.router.Handle("/edit/surname",
-			http.HandlerFunc(h.EditSurname)).Methods("POST", "OPTIONS")
+			http.HandlerFunc(h.EditSurname)).Methods(http.MethodPost, http.MethodOptions)
 		h.router.Handle("/edit/password",
-			http.HandlerFunc(h.EditPassword)).Methods("POST", "OPTIONS")
+			http.HandlerFunc(h.EditPassword)).Methods(http.MethodPost, http.MethodOptions)
 		h.router.Handle("/edit/login",
-			http.HandlerFunc(h.EditLogin)).Methods("POST", "OPTIONS")
+			http.HandlerFunc(h.EditLogin)).Methods(http.MethodPost, http.MethodOptions)
 		h.router.Handle("/delete",
-			http.HandlerFunc(h.DeleteProfile)).Methods("POST", "OPTIONS")
+			http.HandlerFunc(h.DeleteProfile)).Methods(http.MethodPost, http.MethodOptions)
 	}
 }
 

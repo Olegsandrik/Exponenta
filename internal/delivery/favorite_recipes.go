@@ -39,11 +39,11 @@ func (h *FavoriteRecipesHandler) InitRouter(r *mux.Router) {
 	h.router = r.PathPrefix("/favorite").Subrouter()
 	{
 		h.router.Handle("/all",
-			http.HandlerFunc(h.GetAllFavoriteRecipes)).Methods("GET", "OPTIONS")
+			http.HandlerFunc(h.GetAllFavoriteRecipes)).Methods(http.MethodGet, http.MethodOptions)
 		h.router.Handle("/add/{recipeID}",
-			http.HandlerFunc(h.AddRecipeToFavorite)).Methods("POST", "OPTIONS")
+			http.HandlerFunc(h.AddRecipeToFavorite)).Methods(http.MethodPost, http.MethodOptions)
 		h.router.Handle("/delete/{recipeID}",
-			http.HandlerFunc(h.DeleteRecipeFromFavorite)).Methods("POST", "OPTIONS")
+			http.HandlerFunc(h.DeleteRecipeFromFavorite)).Methods(http.MethodPost, http.MethodOptions)
 	}
 }
 
@@ -125,14 +125,14 @@ func (h *FavoriteRecipesHandler) AddRecipeToFavorite(w http.ResponseWriter, r *h
 	err = h.favoriteRecipesUsecase.AddRecipeToFavorite(ctx, uID, rID)
 	if err != nil {
 		if errors.Is(err, internalErrors.ErrDuplicateRow) {
-			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 				Status: http.StatusBadRequest,
 				Msg:    err.Error(),
 				MsgRus: "рецепт уже в избранном",
 			})
 			return
 		} else if errors.Is(err, internalErrors.ErrRecipeWithThisIDDoesNotExist) {
-			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 				Status: http.StatusBadRequest,
 				Msg:    err.Error(),
 				MsgRus: "рецепта с таким id не существует",
@@ -177,7 +177,7 @@ func (h *FavoriteRecipesHandler) DeleteRecipeFromFavorite(w http.ResponseWriter,
 	err = h.favoriteRecipesUsecase.DeleteRecipeFromFavorite(ctx, uID, rID)
 	if err != nil {
 		if errors.Is(err, internalErrors.ErrZeroRowsDeleted) {
-			utils.JSONResponse(ctx, w, 200, utils.ErrResponse{
+			utils.JSONResponse(ctx, w, http.StatusOK, utils.ErrResponse{
 				Status: http.StatusBadRequest,
 				Msg:    err.Error(),
 				MsgRus: "данный рецепт отсутствует в избранных",

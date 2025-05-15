@@ -2,6 +2,7 @@ package models
 
 import (
 	"encoding/json"
+	"time"
 
 	"github.com/Olegsandrik/Exponenta/internal/delivery/dto"
 )
@@ -21,6 +22,8 @@ type RecipeModel struct {
 	Version         int
 	Query           string
 	UserIngredients string
+	IsGenerated     bool
+	CreatedAt       time.Time
 }
 
 type CurrentRecipeModel struct {
@@ -28,6 +31,7 @@ type CurrentRecipeModel struct {
 	Name        string
 	TotalSteps  int
 	CurrentStep CurrentStepRecipeModel
+	IsGenerated bool
 }
 
 type CurrentStepRecipeModel struct {
@@ -77,6 +81,7 @@ func ConvertCurrentRecipeToDTO(recipe CurrentRecipeModel) dto.CurrentRecipeDto {
 		ID:          recipe.ID,
 		Name:        recipe.Name,
 		TotalSteps:  recipe.TotalSteps,
+		IsGenerated: recipe.IsGenerated,
 		CurrentStep: ConvertCurrentStepToDTO(recipe.CurrentStep),
 	}
 }
@@ -128,7 +133,7 @@ func ConvertDtoToRecipe(rt []dto.RecipeDto) []RecipeModel {
 func ConvertRecipeToDto(rm []RecipeModel) []dto.RecipeDto {
 	RecipeItems := make([]dto.RecipeDto, 0, len(rm))
 	for _, r := range rm {
-		RecipeItems = append(RecipeItems, dto.RecipeDto{
+		currRecipe := dto.RecipeDto{
 			ID:              r.ID,
 			Img:             r.Img,
 			Desc:            r.Desc,
@@ -143,7 +148,14 @@ func ConvertRecipeToDto(rm []RecipeModel) []dto.RecipeDto {
 			Version:         r.Version,
 			Query:           r.Query,
 			UserIngredients: json.RawMessage(r.UserIngredients),
-		})
+			IsGenerated:     r.IsGenerated,
+		}
+		
+		if !r.CreatedAt.IsZero() {
+			currRecipe.CreatedAt = &r.CreatedAt
+		}
+
+		RecipeItems = append(RecipeItems, currRecipe)
 	}
 	return RecipeItems
 }

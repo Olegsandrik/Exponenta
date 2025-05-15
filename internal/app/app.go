@@ -97,7 +97,7 @@ func InitApp() *App {
 
 	r := mux.NewRouter()
 
-	apiRouter := r.PathPrefix("/api").Subrouter()
+	apiRouter := r.PathPrefix("/api/v1").Subrouter()
 
 	// Logger
 
@@ -163,6 +163,13 @@ func InitApp() *App {
 	mainPageUsecase := usecase.NewMainPageUsecase(mainPageRepo, favoriteRecipeRepo)
 	mainPageHandler := delivery.NewMainPageHandler(mainPageUsecase)
 	mainPageHandler.InitRouter(apiRouter)
+
+	// Cooking History
+
+	cookingHistoryRepo := repository.NewCookingHistoryRepo(postgresAdapter)
+	cookingHistoryUsecase := usecase.NewCookingHistoryUsecase(cookingHistoryRepo, favoriteRecipeRepo)
+	cookingHistoryHandler := delivery.NewCookingHistoryHandler(cookingHistoryUsecase)
+	cookingHistoryHandler.InitRouter(apiRouter)
 
 	// Middleware
 
