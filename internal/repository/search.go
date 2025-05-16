@@ -198,7 +198,6 @@ func (repo *SearchRepository) getFilter(ctx context.Context, filter string) ([]s
 	}
 
 	hashMap, err := dao.MakeSet(items)
-
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf("query internalerrors: %+v with query: %s", err, q))
 		return nil, internalErrors.ErrToGetFilterValues
@@ -207,6 +206,9 @@ func (repo *SearchRepository) getFilter(ctx context.Context, filter string) ([]s
 	result := make([]string, 0, len(hashMap))
 
 	for diet := range hashMap {
+		if diet == "" {
+			continue
+		}
 		result = append(result, diet)
 	}
 
