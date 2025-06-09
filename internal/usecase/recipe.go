@@ -8,13 +8,11 @@ import (
 	"github.com/Olegsandrik/Exponenta/internal/utils"
 )
 
-const publicRecipesConst = "public.recipes"
-
 type CookingRecipeRepo interface {
 	GetAllRecipe(ctx context.Context, num int) ([]models.RecipeModel, error)
 	GetRecipeByID(ctx context.Context, id int) ([]models.RecipeModel, error)
 	EndCooking(ctx context.Context, uID uint) (int, bool, error)
-	StartCooking(ctx context.Context, uID uint, recipeID int, entity string) error
+	StartCooking(ctx context.Context, uID uint, recipeID int, isGenerated bool) error
 	GetCurrentRecipe(ctx context.Context, uID uint) (models.CurrentRecipeModel, error)
 	GetNextRecipeStep(ctx context.Context, uID uint) (models.CurrentStepRecipeModel, error)
 	GetPrevRecipeStep(ctx context.Context, uID uint) (models.CurrentStepRecipeModel, error)
@@ -91,7 +89,7 @@ func (u *CookingRecipeUsecase) StartCookingRecipe(ctx context.Context, recipeID 
 		return dto.CurrentStepRecipeDto{}, err
 	}
 
-	err = u.repo.StartCooking(ctx, uID, recipeID, publicRecipesConst)
+	err = u.repo.StartCooking(ctx, uID, recipeID, false)
 	if err != nil {
 		return dto.CurrentStepRecipeDto{}, err
 	}

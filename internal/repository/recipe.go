@@ -17,8 +17,6 @@ import (
 	"github.com/Olegsandrik/Exponenta/logger"
 )
 
-const publicGenRecipesConst = "public.generated_recipes"
-
 type CookingRecipeRepo struct {
 	storage *postgres.Adapter
 }
@@ -187,7 +185,7 @@ func (repo *CookingRecipeRepo) AddRecipeToHistory(ctx context.Context,
 	return nil
 }
 
-func (repo *CookingRecipeRepo) StartCooking(ctx context.Context, uID uint, recipeID int, entity string) error {
+func (repo *CookingRecipeRepo) StartCooking(ctx context.Context, uID uint, recipeID int, isGenerated bool) error {
 	tx, err := repo.storage.BeginTx(ctx, nil)
 	if err != nil {
 		logger.Error(ctx,
@@ -204,7 +202,7 @@ func (repo *CookingRecipeRepo) StartCooking(ctx context.Context, uID uint, recip
 		}
 	}()
 
-	recipe, err := repo.getRecipe(ctx, tx, recipeID, entity)
+	recipe, err := repo.getRecipe(ctx, tx, recipeID, isGenerated)
 
 	if err != nil {
 		return err
@@ -232,25 +230,26 @@ func (repo *CookingRecipeRepo) StartCooking(ctx context.Context, uID uint, recip
 }
 
 func (repo *CookingRecipeRepo) getRecipe(ctx context.Context, tx *sqlx.Tx, recipeID int,
-	entity string) (*dao.RecipeTable, error) {
-	q := `SELECT r.name, r.steps, r.total_steps FROM %s as r WHERE id = $1`
-
-	q = fmt.Sprintf(q, entity)
+	isGenerated bool) (*dao.RecipeTable, error) {
+	q := `SELECT r.name, r.steps, r.total_steps FROM public.recipes as r WHERE id = $1`
+	if isGenerated {
+		q = `SELECT r.name, r.steps, r.total_steps FROM public.generated_recipes as r WHERE id = $1`
+	}
 
 	recipeRows := make([]dao.RecipeTable, 0, 1)
 
 	if err := tx.SelectContext(ctx, &recipeRows, q, recipeID); err != nil {
-		logger.Error(ctx, fmt.Sprintf("error getting recipe row: %e with recipeId: %d, entity: %s",
-			err, recipeID, entity))
+		logger.Error(ctx, fmt.Sprintf("error getting recipe row: %e with recipeId: %d",
+			err, recipeID))
 		return nil, internalErrors.ErrFailToGetRecipeByID
 	}
 
 	if len(recipeRows) == 0 {
-		logger.Error(ctx, fmt.Sprintf("recipe not found with recipeId: %d, entity: %s", recipeID, entity))
+		logger.Error(ctx, fmt.Sprintf("recipe not found with recipeId: %d", recipeID))
 		return nil, internalErrors.ErrNoSuchRecipeWithID
 	}
 
-	if entity == publicGenRecipesConst {
+	if isGenerated {
 		recipeRows[0].IsGenerated = true
 	}
 
@@ -387,9 +386,35 @@ func (repo *CookingRecipeRepo) GetCurrentRecipe(ctx context.Context, uID uint) (
 	return currentRecipeItem, nil
 }
 
-func (repo *CookingRecipeRepo) updateCurrentStepTx(ctx context.Context, tx *sqlx.Tx, uID uint, sign string) error {
-	q := fmt.Sprintf(`UPDATE public.current_recipe SET current_step_num = current_step_num %s 1
-		WHERE user_id = $1`, sign)
+func (repo *CookingRecipeRepo) updateCurrentStepTxPlus(ctx context.Context, tx *sqlx.Tx, uID uint) error {
+	q := `UPDATE public.current_recipe SET current_step_num = current_step_num %s 1
+		WHERE user_id = $1`
+
+	result, err := tx.ExecContext(ctx, q, uID)
+
+	if err != nil {
+		logger.Error(ctx, fmt.Sprintf("failed to update current_step: %e for userId: %d", err, uID))
+		return internalErrors.ErrFailedToUpdateRecipeStep
+	}
+
+	rowsAffected, err := result.RowsAffected()
+
+	if err != nil {
+		logger.Error(ctx, fmt.Sprintf("internalerrors with get rows affected by update: %d for userId: %d", err, uID))
+		return internalErrors.ErrFailedToUpdateRecipeStep
+	}
+
+	if rowsAffected == 0 {
+		logger.Error(ctx, fmt.Sprintf("now found row to update current_step for userId: %d", uID))
+		return internalErrors.ErrFailedToUpdateRecipeStep
+	}
+
+	return nil
+}
+
+func (repo *CookingRecipeRepo) updateCurrentStepTxMinus(ctx context.Context, tx *sqlx.Tx, uID uint) error {
+	q := `UPDATE public.current_recipe SET current_step_num = current_step_num - 1
+		WHERE user_id = $1`
 
 	result, err := tx.ExecContext(ctx, q, uID)
 
@@ -460,7 +485,7 @@ func (repo *CookingRecipeRepo) GetPrevRecipeStep(ctx context.Context, uID uint) 
 		}
 	}()
 
-	err = repo.updateCurrentStepTx(ctx, tx, uID, "-")
+	err = repo.updateCurrentStepTxMinus(ctx, tx, uID)
 
 	if err != nil {
 		return models.CurrentStepRecipeModel{}, err
@@ -503,7 +528,7 @@ func (repo *CookingRecipeRepo) GetNextRecipeStep(ctx context.Context, uID uint) 
 		}
 	}()
 
-	err = repo.updateCurrentStepTx(ctx, tx, uID, "+")
+	err = repo.updateCurrentStepTxPlus(ctx, tx, uID)
 
 	if err != nil {
 		return models.CurrentStepRecipeModel{}, err

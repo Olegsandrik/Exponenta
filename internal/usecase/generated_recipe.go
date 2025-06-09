@@ -8,8 +8,6 @@ import (
 	"github.com/Olegsandrik/Exponenta/internal/utils"
 )
 
-const publicGenRecipesConst = "public.generated_recipes"
-
 type GenerateRepository interface {
 	GetAllRecipes(ctx context.Context, num int, userID uint) ([]models.RecipeModel, error)
 	GetRecipeByID(ctx context.Context, recipeID int, userID uint) ([]models.RecipeModel, error)
@@ -135,7 +133,7 @@ func (a *GenerateUsecase) StartCookingByRecipeID(ctx context.Context, recipeID i
 		return dto.CurrentStepRecipeDto{}, err
 	}
 
-	err = a.RecipeRepository.StartCooking(ctx, uID, recipeID, publicGenRecipesConst)
+	err = a.RecipeRepository.StartCooking(ctx, uID, recipeID, true)
 	if err != nil {
 		return dto.CurrentStepRecipeDto{}, err
 	}
